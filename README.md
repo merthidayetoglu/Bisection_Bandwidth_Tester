@@ -19,7 +19,7 @@ Number of iterations is for averaging the bandwidth over many times. The program
 
 There are preworked Makefiles and run scripts for Summit and Crusher in the repository.
 
-![Summit Measurements](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/summit_measurement.png)
+![Summit Measurement](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/summit_measurement.png)
 
 This table summarizes the implemented capabilities.
 
@@ -35,11 +35,7 @@ Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questi
 <details><summary>More Results</summary>
 <p>
 
-#### We can hide anything, even code!
-
-```ruby
-   puts "Hello World"
-```
+![Crusher Measurement](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/crusher_measurement.png)
 
 </p>
 </details>
