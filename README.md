@@ -5,9 +5,9 @@ Porting the capabilities are controlled by preprocessor directives. With no spec
 
 | Porting Options   | Capabilities |
 | :---:             | --- |
-|Default for CPU     | <li>MPI</li> |
+|Default is on CPU     | <li>MPI</li> |
 |`#define SCI_CUDA` | <li>CUDA-Aware MPI</li><li>CPU-Staged MPI</li><li>NCCL</li><li>CUDA IPC</li> |
-|`#define SCI_HIP`  | <li>GPU-Aware MPI</li><li>CPU-Staged MPI</li><li>NCCL (AMD Port of the above)</li><li>HIP IPC</li> |
+|`#define SCI_HIP`  | <li>GPU-Aware MPI</li><li>CPU-Staged MPI</li><li>NCCL</li><li>HIP IPC</li> |
 
 
 
