@@ -4,9 +4,9 @@ Unit test for measuring the bandwidth of communication of a group of processors 
 Porting the capabilities are controlled by preprocessor directives. With no specification, it targets CPU by default. To port on Nvidia GPUs, one needs to ```#define SCI_CUDA```. To port on AMD GPUs, you need to ```#define SCI_HIP```.
 
 
-| Porting Options   | Capabilities |
-| :---:             | --- |
-|Default is on CPU  | `#define MPI` for MPI |
+| Porting Options   | Capabilities | Include Options | Extras |
+| :---:             | --- | --- | --- |
+|Default is on CPU  | MPI | `#define MPI` | `#include <cuda.h> |
 |`#define SCI_CUDA` | `#define MPI` for CUDA-Aware MPI <br> `#define MPI_Staged` for CPU-Staged MPI <br> `#define NCCL` for NCCL <br> `#define IPC` CUDA IPC |
 |`#define SCI_HIP`  | GPU-Aware MPI <br> CPU-Staged MPI <br> NCCL <br> HIP IPC |
 
