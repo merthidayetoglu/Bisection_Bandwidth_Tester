@@ -32,7 +32,31 @@ This table summarizes the implemented capabilities.
 
 Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this benchmarking tool with GASNet-EX would be great!
 
-<details><summary>More Results</summary>
+<details><summary>Crusher Results</summary>
+<p>
+
+![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/crusher_measurement.png)
+
+</p>
+</details>
+
+<details><summary>Delta Results</summary>
+<p>
+
+![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/crusher_measurement.png)
+
+</p>
+</details>
+
+<details><summary>Spock Results</summary>
+<p>
+
+![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/crusher_measurement.png)
+
+</p>
+</details>
+
+<details><summary>ThetaGPU Results</summary>
 <p>
 
 ![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/crusher_measurement.png)
