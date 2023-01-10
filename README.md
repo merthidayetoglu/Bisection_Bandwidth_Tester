@@ -3,11 +3,11 @@ Unit test for measuring the bandwidth of communication of a group of processors 
 
 The capabilities are controlled by preprocessor directives. With no specification, it works on CPU by default. To test Nvidia GPU, one needs to ```#define SCI_CUDA```. To test AMD GPU, you need to ```#define SCI_HIP```.
 
-| Porting Options | Capability |
+| Porting Options | Capability | |
 |:---: | :---: |
-| Default is CPU | Content Cell  | asdf|
-| `#define SCI_CUDA`  | Content Cell  |
-| `#define SCI_HIP`  | Content Cell  |
+| Default is CPU | Content Cell  | asdf |
+| `#define SCI_CUDA`  | Content Cell  | asdf |
+| `#define SCI_HIP`  | Content Cell  | asdf |
 
 There are two parameters to describe the group topology. The first one is the number of processors and the second one is the group size. The benchmarking tool splits the global communicator ```MPI_COMM_WORLD``` into subcommunicators with ```MPI_Comm_split```. Eeach group talks to all other groups with a mapping between GPU as shown in the figure below. These partitioning scenarios can be applied to test communication bandwidth accross nodes, among GPUs within nodes, and between pairs of GPUs.
 
