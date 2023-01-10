@@ -5,7 +5,7 @@ The capabilities are controlled by preprocessor directives. With no specificatio
 
 | Porting Options | Capability |
 |:---: | :---: |
-| Default is CPU | Content Cell  |
+| Default is CPU | Content Cell  | asdf|
 | `#define SCI_CUDA`  | Content Cell  |
 | `#define SCI_HIP`  | Content Cell  |
 
