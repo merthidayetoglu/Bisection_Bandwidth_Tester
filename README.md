@@ -3,13 +3,12 @@ Unit test for measuring the bandwidth of communication of a group of processors 
 
 Porting the capabilities are controlled by preprocessor directives. With no specification, it targets CPU by default. To port on Nvidia GPUs, one needs to ```#define SCI_CUDA```. To port on AMD GPUs, you need to ```#define SCI_HIP```. The table below shows the directives to enable desired capabilities.
 
-<div align="center">
+
 | Porting Options   | Capability | Include |
 | :---:               | ---: | :--- |
 |Default is on CPU  | MPI | `#define MPI` |
 |`#define SCI_CUDA` | CUDA-Aware MPI <br> CPU-Staged MPI <br> NCCL <br> CUDA IPC | `#define MPI` <br> `#define MPI_Staged` <br> `#define NCCL` <br> `#define IPC` |
 |`#define SCI_HIP`  | GPU-Aware MPI <br> CPU-Staged MPI <br> NCCL <br> HIP IPC | `#define MPI` <br> `#define MPI_Staged` <br> `#define NCCL` <br> `#define IPC` |
- <\div>
 
 
 There are two parameters to describe the group topology. The first one is the number of processors and the second one is the group size. The benchmarking tool splits the global communicator ```MPI_COMM_WORLD``` into subcommunicators with ```MPI_Comm_split```. Eeach group talks to all other groups with a mapping between GPU as shown in the figure below. These partitioning scenarios can be applied to test communication bandwidth accross nodes, among GPUs within nodes, and between pairs of GPUs.
