@@ -10,7 +10,7 @@ There are two parameters to describe the group topology. The first one is the nu
 Considering a hierarchical communication network, MPI ranks are assumed to be assigned in as an SMP style. For example, if there are six GPUs and three nodes, GPU 0 and GPU 1 are in the same node and so GPU 2 and GPU3, and so on. The first GPU of a group talks to the first GPUs on other groups, the second GPU of a group talks to the corresponding second GPUs on other groups, and so on.
 
 This tool runs like
-```c++
+```cpp
 mpirun -np #numproc Alltoall #count #numiter #groupsize
 ```
 where count is the number of words between two GPUs. Note that all involved GPUs both sends and receives data and the measurement is given as aggregate bi-directional bandwidth of a group.
