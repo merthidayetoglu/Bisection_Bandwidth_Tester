@@ -3,71 +3,29 @@ Unit test for measuring the bandwidth of communication of a group of processors 
 
 The capabilities are controlled by preprocessor directives. With no specification, it works on CPU by default. To test Nvidia GPU, one needs to ```#define SCI_CUDA```. To test AMD GPU, you need to ```#define SCI_HIP```.
 
-| Porting Options | Capability | |
-|:---: | :---: | :---: |
-| Default is CPU | Content Cell  | asdf |
-| `#define SCI_CUDA`  | Content Cell  | asdf |
-| `#define SCI_HIP`  | Content Cell  | asdf |
-
 <table>
-    <thead>
-        <tr>
-            <th>Layer 1</th>
-            <th>Layer 2</th>
-            <th>Layer 3</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td rowspan=4>L1 Name</td>
-            <td rowspan=2>L2 Name A</td>
-            <td>L3 Name A</td>
-        </tr>
-        <tr>
-            <td>L3 Name B</td>
-        </tr>
-        <tr>
-            <td rowspan=2>L2 Name B</td>
-            <td>L3 Name C</td>
-        </tr>
-        <tr>
-            <td>L3 Name D</td>
-        </tr>
-    </tbody>
-</table>
-
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;margin:0px auto;}
-.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-baqh{text-align:center;vertical-align:top}
-.tg .tg-amwm{font-weight:bold;text-align:center;vertical-align:top}
-</style>
-<table class="tg">
 <thead>
   <tr>
-    <th class="tg-amwm">Port Options</th>
-    <th class="tg-amwm">Capability Options</th>
-    <th class="tg-amwm">Explanation</th>
+    <th>Port Options</th>
+    <th>Capability Options</th>
+    <th>Explanation</th>
   </tr>
 </thead>
 <tbody>
   <tr>
-    <td class="tg-baqh">Default is CPU</td>
-    <td class="tg-baqh">#define MPI</td>
-    <td class="tg-baqh">MPI Implementation with MPI_Isend / MPI_Irecv on CPU.</td>
+    <td>Default is CPU</td>
+    <td>#define MPI</td>
+    <td>MPI Implementation with MPI_Isend / MPI_Irecv on CPU.</td>
   </tr>
   <tr>
-    <td class="tg-baqh">#define SCI_CUDA</td>
-    <td class="tg-baqh"></td>
-    <td class="tg-baqh"></td>
+    <td>#define SCI_CUDA</td>
+    <td></td>
+    <td></td>
   </tr>
   <tr>
-    <td class="tg-baqh">#define SCI_AMD</td>
-    <td class="tg-baqh"></td>
-    <td class="tg-baqh"></td>
+    <td>#define SCI_AMD</td>
+    <td></td>
+    <td></td>
   </tr>
 </tbody>
 </table>
