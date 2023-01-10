@@ -1,16 +1,17 @@
-#include <cstdio> // for printf
+#include <stdio.h> // for printf
+#include <stdlib.h> // for atoi
 #include <cstring> // for memcpy
 #include <mpi.h>
 #include <omp.h>
 
-#include <hip/hip_runtime.h>
-#include <rccl.h>
-//#include <nccl.h>
+//#include <hip/hip_runtime.h>
+//#include <rccl.h>
+#include <nccl.h>
 
 #define ROOT 0
 
-#define SCI_HIP
-//#define SCI_CUDA
+//#define SCI_HIP
+#define SCI_CUDA
 
 #define MPI
 #define MPI_Staged
