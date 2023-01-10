@@ -19,7 +19,7 @@ Number of iterations is for averaging the bandwidth over many times. The program
 
 The figure below summarizes the Summit results. Note that all involved GPUs both sends and receives data and the measurement is given as aggregate bi-directional bandwidth of a group.
 
-![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/summit_measurement.png)
+![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement.png)
 
 This table summarizes the implemented capabilities.
 
@@ -35,7 +35,7 @@ Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questi
 <details><summary>Crusher Results</summary>
 <p>
 
-![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/crusher_measurement.png)
+![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/crusher_measurement.png)
 
 </p>
 </details>
