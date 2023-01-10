@@ -5,7 +5,7 @@ The capabilities are controlled by preprocessor directives. With no specificatio
 
 Default (CPU only)
 - MPI: Implemented with MPI_Isend / MPI_Irecv.
-#define SCI_CUDA (for Nvidia GPUs)
+### `#define SCI_CUDA` (for Nvidia GPUs)
 - MPI
 - MPI_Staged
 - NCCL
