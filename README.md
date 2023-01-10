@@ -13,11 +13,11 @@ This tool runs like
 ```cpp
 mpirun -np #numproc Alltoall #count #numiter #groupsize
 ```
-where count is the number of words between two GPUs. Note that all involved GPUs both sends and receives data and the measurement is given as aggregate bi-directional bandwidth of a group.
+where count is the number of words between two GPUs. There are preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder.
 
 Number of iterations is for averaging the bandwidth over many times. The program performs one warmup round and measures time over the number of iteration where each iteration are bulk-synchronized individually.
 
-There are preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU. The figure below summarizes the Summit results. 
+The figure below summarizes the Summit results. Note that all involved GPUs both sends and receives data and the measurement is given as aggregate bi-directional bandwidth of a group.
 
 ![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/summit_measurement.png)
 
