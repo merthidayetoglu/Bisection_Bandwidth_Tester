@@ -43,15 +43,11 @@ Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questi
 <details><summary>Delta Results</summary>
 <p>
 
-![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/crusher_measurement.png)
-
 </p>
 </details>
 
 <details><summary>Spock Results</summary>
 <p>
-
-![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/crusher_measurement.png)
 
 </p>
 </details>
@@ -59,7 +55,6 @@ Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questi
 <details><summary>ThetaGPU Results</summary>
 <p>
 
-![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/crusher_measurement.png)
 
 </p>
 </details>
