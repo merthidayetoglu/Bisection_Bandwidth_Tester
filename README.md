@@ -1,4 +1,4 @@
-# OLCF_BW_test
+# Bisection Bandwidth Tester
 Unit test for measuring bisectional bandwidth. It is based on MPI but tests additional capabilites such as GPU-Aware MPI, CPU-Staged MPI, NCCL, and IPC.
 
 By default it works on CPU. To test Nvidia GPU, you need to ```#define SCI_CUDA```. To test AMD GPU, you need to ```#define SCI_HIP```.
@@ -14,7 +14,7 @@ mpirun -np #numproc Alltoall #numiter #groupsize
 
 Number of iterations is for averaging the bandwidth over many times. The program performs one warmup round and measures time over the number of iteration.
 
-There are preworked Makefiles and run scripts for Summit and Crusher.
+There are preworked Makefiles and run scripts for Summit and Crusher in the repository.
 
 ![Summit Measurements](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/summit_measurement.png)
 
