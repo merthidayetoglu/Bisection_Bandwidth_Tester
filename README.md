@@ -18,4 +18,4 @@ There are preworked Makefiles and run scripts for Summit and Crusher.
 
 ![Summit Measurements](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/summit_measurement.png)
 
-Please send and email to [Link text](linkurl)
+Please send and email to [merth@stanford.edu](merth@stanford.edu).
