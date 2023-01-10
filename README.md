@@ -5,7 +5,7 @@ By default it works on CPU. To test Nvidia GPU, you need to ```#define SCI_CUDA`
 
 There are two important parameters. The first one is the number of processors shown with $P$ and the second one is the group size shown with $G$. All groups talk to each other with a mapping between GPU as shown in the figure below.
 
-![This is an image](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/group_examples.png)
+![Group Examples](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/group_examples.png)
 
 This tool runs like
 ```
@@ -15,3 +15,5 @@ mpirun -np #numproc Alltoall #numiter #groupsize
 Number of iterations is for averaging the bandwidth over many times. The program performs one warmup round and measures time over the number of iteration.
 
 There are preworked Makefiles and run scripts for Summit and Crusher.
+
+![Summit Measurements](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/summit_measurements.png)
