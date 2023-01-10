@@ -1,5 +1,5 @@
 # Bisection Bandwidth Tester
-Unit test for measuring bisectional bandwidth. It is based on MPI but tests additional capabilites such as GPU-Aware MPI, CPU-Staged MPI, NCCL, and IPC.
+Unit test for measuring the bandwidth of communication data in-and-out (bi-directional) of a group of processors (mainly GPUs). It is based on MPI but tests additional capabilites such as GPU-Aware MPI, CPU-Staged MPI, NCCL, and IPC.
 
 By default it works on CPU. To test Nvidia GPU, you need to ```#define SCI_CUDA```. To test AMD GPU, you need to ```#define SCI_HIP```.
 
