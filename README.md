@@ -8,6 +8,24 @@ Porting the capabilities are controlled by preprocessor directives. With no spec
 |Default is on CPU     | <li>MPI</li>|
 |`#define SCI_CUDA` | <li>CUDA-Aware MPI</li><li>CPU-Staged MPI</li><li>NCCL</li><li>CUDA IPC</li> |
 |`#define SCI_HIP`  | <li>GPU-Aware MPI</li><li>CPU-Staged MPI</li><li>NCCL</li><li>HIP IPC</li> |
+| asdf | <table>
+<thead>
+  <tr>
+    <th>CUDA-Aware MPI</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>CPU-Staged MPI</td>
+  </tr>
+  <tr>
+    <td>NCCL</td>
+  </tr>
+  <tr>
+    <td>IPC</td>
+  </tr>
+</tbody>
+</table> |
 
 
 
