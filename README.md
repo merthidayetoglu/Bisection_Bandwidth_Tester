@@ -3,7 +3,7 @@ Unit test for measuring the bandwidth of communication of a group of processors 
 
 The capabilities are controlled by preprocessor directives. With no specification, it works on CPU by default. To test Nvidia GPU, one needs to ```#define SCI_CUDA```. To test AMD GPU, you need to ```#define SCI_HIP```.
 
-There are two parameters to describe the group topology. The first one is the number of processors and the second one is the group size shown. All groups talk to each other with a mapping between GPU as shown in the figure below.
+There are two parameters to describe the group topology. The first one is the number of processors and the second one is the group size. The benchmarking tool splits the global communicator ```MPI_COMM_WORLD``` into subcommunicators with ```MPI_Comm_split```. Eeach group talks to all other groups with a mapping between GPU as shown in the figure below.
 
 ![Group Examples](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/group_examples_corrected.png)
 
