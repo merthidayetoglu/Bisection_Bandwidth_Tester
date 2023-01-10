@@ -39,8 +39,6 @@ void copy(const T *sendbuf, const int senddim, T *recvbuf) {
 int main(int argc, char *argv[])
 {
 
-  rcclComm_t comm_rccl;
-
   // INITIALIZE MPI+OpenMP
   int myid;
   int numproc;
@@ -48,8 +46,8 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   MPI_Comm_size(MPI_COMM_WORLD, &numproc);
   int numthread;
-#pragma omp parallel
-  if (omp_get_thread_num() == 0)
+  #pragma omp parallel
+  if(omp_get_thread_num() == 0)
     numthread = omp_get_num_threads();
   long count = atoi(argv[1]);
   int numiter = atoi(argv[2]);
@@ -57,7 +55,7 @@ int main(int argc, char *argv[])
   int numnode = numproc / groupsize;
   int mynode = myid / groupsize;
   // PRINT NUMBER OF PROCESSES AND THREADS
-  if (myid == ROOT)
+  if(myid == ROOT)
   {
     printf("\n");
     printf("Number of processes: %d\n", numproc);
@@ -266,13 +264,13 @@ int main(int argc, char *argv[])
       }
       // MEMCPY LOOP
       bool done_recv = false;
-      while (!done_recv) {
+      while(!done_recv) {
         done_recv = true;
-        for (int node = 0; node < numnode; node++)
-          if (node != mynode && !recvcomplete[node]) {
+        for(int node = 0; node < numnode; node++)
+          if(node != mynode && !recvcomplete[node]) {
             int flag = 0;
             MPI_Test(recvrequest + node, &flag, MPI_STATUS_IGNORE);
-            if (flag) {
+            if(flag) {
 #ifdef SCI_CUDA
               cudaMemcpyAsync(recvbuf_d + node * count, recvbuf_h + node * count, count * sizeof(Type), cudaMemcpyHostToDevice, recvstream[node]);
 #elif defined SCI_HIP
@@ -305,7 +303,7 @@ int main(int argc, char *argv[])
       memset(recvcomplete, 0, numnode);
       double time = MPI_Wtime();
       MPI_Barrier(MPI_COMM_WORLD);
-      for(int node = 0; node < numnode; node++)
+      for (int node = 0; node < numnode; node++)
         if(node != mynode) {
           MPI_Irecv(recvbuf_h + node * count, count * sizeof(Type), MPI_BYTE, node, MPI_ANY_TAG, comm, recvrequest + node);
 #ifdef SCI_CUDA
@@ -333,13 +331,13 @@ int main(int argc, char *argv[])
       }
       // MEMCPY LOOP
       bool done_recv = false;
-      while (!done_recv) {
+      while(!done_recv) {
         done_recv = true;
-        for (int node = 0; node < numnode; node++)
-          if (node != mynode && !recvcomplete[node]) {
+        for(int node = 0; node < numnode; node++)
+          if(node != mynode && !recvcomplete[node]) {
             int flag = 0;
             MPI_Test(recvrequest + node, &flag, MPI_STATUS_IGNORE);
-            if (flag) {
+            if(flag) {
 #ifdef SCI_CUDA
               cudaMemcpyAsync(recvbuf_d + node * count, recvbuf_h + node * count, count * sizeof(Type), cudaMemcpyHostToDevice, recvstream[node]);
 #elif defined SCI_HIP
@@ -492,7 +490,7 @@ int main(int argc, char *argv[])
       printf("ENABLE NCCL\n");
     ncclComm_t comm_nccl;
     ncclUniqueId id;
-    if (myid / groupsize == 0)
+    if(myid / groupsize == 0)
       ncclGetUniqueId(&id);
     MPI_Bcast(&id, sizeof(id), MPI_BYTE, 0, comm);
     ncclCommInitRank(&comm_nccl, numnode, id, myid / groupsize);
@@ -547,7 +545,7 @@ int main(int argc, char *argv[])
   }
 #endif
 
-// RELEASE GPU POINTERS
+  // RELEASE GPU POINTERS
 #ifdef SCI_CUDA
   cudaFree(sendbuf_d);
   cudaFree(recvbuf_d);
@@ -558,11 +556,11 @@ int main(int argc, char *argv[])
   delete[] sendbuf_d;
   delete[] recvbuf_d;
 #endif
-// RELEASE CPU POINTERS
+  // RELEASE CPU POINTERS
   delete[] sendbuf;
   delete[] recvbuf;
 
-// FINALIZE
+  // FINALIZE
   MPI_Finalize();
 
   return 0;
