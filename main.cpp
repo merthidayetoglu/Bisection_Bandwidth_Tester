@@ -1,6 +1,3 @@
-// Copyright Mert Hidayetoglu
-// Jan 2023, Stanford, CA
-
 #include <cstdio> // for printf
 #include <cstring> // for memcpy
 #include <mpi.h>
@@ -16,9 +13,9 @@
 //#define SCI_CUDA
 
 #define MPI
-//#define MPI_Staged
-//#define NCCL
-//#define IPC
+#define MPI_Staged
+#define NCCL
+#define IPC
 
 // USER DEFINED TYPE
 struct Type
@@ -41,6 +38,9 @@ void copy(const T *sendbuf, const int senddim, T *recvbuf) {
 
 int main(int argc, char *argv[])
 {
+
+  rcclComm_t comm_rccl;
+
   // INITIALIZE MPI+OpenMP
   int myid;
   int numproc;
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 #ifdef MPI
   {
     if(myid == ROOT)
-      printf("ENABLE CUDA-Aware MPI\n");
+      printf("ENABLE GPU-Aware MPI\n");
     {
       MPI_Request sendrequest[numnode];
       MPI_Request recvrequest[numnode];
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
       totalData += 2 * (numnode - 1) * count * sizeof(Type) / 1.e9;
     }
     if(myid == ROOT)
-      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- CUDA-Aware MPI\n", totalTime, totalData, totalData / totalTime * groupsize);
+      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- GPU-Aware MPI\n", totalTime, totalData, totalData / totalTime * groupsize);
   }
 #endif
 
@@ -376,10 +376,9 @@ int main(int argc, char *argv[])
 
 #ifdef IPC
   {
-    cudaMemset(recvbuf_d, 0, numnode * count * sizeof(Type));
+#ifdef SCI_CUDA
     if(myid == ROOT)
       printf("ENABLE CUDA IPC\n");
-
     Type *recvbuf_p[numnode];
     cudaStream_t stream_ipc[numnode];
     for(int node = 0; node < numnode; node++)
@@ -402,7 +401,6 @@ int main(int argc, char *argv[])
       for(int node = 0; node < numnode; node++)
         if(mynode != node)
           cudaMemcpyAsync(recvbuf_p[node] + mynode * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToDevice, stream_ipc[node]);
-      //cudaMemcpy(recvbuf_d + mynode * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToDevice);
       cudaDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
@@ -419,7 +417,6 @@ int main(int argc, char *argv[])
       for(int node = 0; node < numnode; node++)
         if(mynode != node)
           cudaMemcpyAsync(recvbuf_p[node] + mynode * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToDevice, stream_ipc[node]);
-      //cudaMemcpy(recvbuf_d + mynode * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToDevice);
       cudaDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
@@ -429,10 +426,63 @@ int main(int argc, char *argv[])
       totalData += 2 * (numnode - 1) * count * sizeof(Type) / 1.e9;
     }
     if(myid == ROOT)
-      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- CUDA_IPC\n", totalTime, totalData, totalData / totalTime * groupsize);
-
+      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- IPC\n", totalTime, totalData, totalData / totalTime * groupsize);
     for(int node = 0; node < numnode; node++)
       cudaStreamDestroy(stream_ipc[node]);
+#elif defined SCI_HIP
+    if(myid == ROOT)
+      printf("ENABLE HIP IPC\n");
+    Type *recvbuf_p[numnode];
+    hipStream_t stream_ipc[numnode];
+    for(int node = 0; node < numnode; node++)
+      hipStreamCreate(stream_ipc + node);
+    {
+      hipIpcMemHandle_t peerhandle[numnode];
+      for(int node = 0; node < numnode; node++) {
+        hipIpcMemHandle_t myhandle;
+        Type *temp = recvbuf_d + node * count;
+        hipIpcGetMemHandle(&myhandle, temp);
+        MPI_Gather(&myhandle, sizeof(hipIpcMemHandle_t), MPI_BYTE, peerhandle, sizeof(hipIpcMemHandle_t), MPI_BYTE, node, comm);
+      }
+      for(int node = 0; node < numnode; node++)
+        hipIpcOpenMemHandle((void**)(recvbuf_p + node), peerhandle[node], hipIpcMemLazyEnablePeerAccess);
+    }
+    {
+      hipDeviceSynchronize();
+      MPI_Barrier(MPI_COMM_WORLD);
+      double time = MPI_Wtime();
+      for(int node = 0; node < numnode; node++)
+        if(mynode != node)
+          hipMemcpyAsync(recvbuf_p[node] + mynode * count, sendbuf_d, count * sizeof(Type), hipMemcpyDeviceToDevice, stream_ipc[node]);
+      hipDeviceSynchronize();
+      MPI_Barrier(MPI_COMM_WORLD);
+      time = MPI_Wtime() - time;
+      if(myid == ROOT)
+        printf("warmup time %e\n", time);
+    }
+    double totalData = 0;
+    double totalTime = 0;
+    for(int iter = 0; iter < numiter; iter++)
+    {
+      hipDeviceSynchronize();
+      MPI_Barrier(MPI_COMM_WORLD);
+      double time = MPI_Wtime();
+      for(int node = 0; node < numnode; node++)
+        if(mynode != node)
+          hipMemcpyAsync(recvbuf_p[node] + mynode * count, sendbuf_d, count * sizeof(Type), hipMemcpyDeviceToDevice, stream_ipc[node]);
+      hipDeviceSynchronize();
+      MPI_Barrier(MPI_COMM_WORLD);
+      time = MPI_Wtime() - time;
+      if(myid == ROOT)
+        printf("time %e\n", time);
+      totalTime += time;
+      totalData += 2 * (numnode - 1) * count * sizeof(Type) / 1.e9;
+    }
+    if(myid == ROOT)
+      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- IPC\n", totalTime, totalData, totalData / totalTime * groupsize);
+    for(int node = 0; node < numnode; node++)
+      hipStreamDestroy(stream_ipc[node]);
+#endif
   }
 #endif
 
