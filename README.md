@@ -7,6 +7,8 @@ There are two parameters to describe the group topology. The first one is the nu
 
 ![Group Examples](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/group_examples_corrected.png)
 
+Considering the physical communication hierarchy, MPI ranks are assigned in as an SMP style. The first GPU of a group talks to the first GPUs on other groups, the second GPU of a group talks to the corresponding second GPUs on other groups, and so on.
+
 This tool runs like
 ```
 mpirun -np #numproc Alltoall #count #numiter #groupsize
