@@ -4,6 +4,7 @@ Unit test for measuring the bandwidth of communication of a group of processors 
 Porting the capabilities are controlled by preprocessor directives. With no specification, it targets CPU by default. To port on Nvidia GPUs, one needs to ```#define SCI_CUDA```. To port on AMD GPUs, you need to ```#define SCI_HIP```.
 
 | Porting Options   |
+| :---:             |
 |Default on CPU     |
 |`#define SCI_CUDA` |
 |`#define SCI_HIP`  |
