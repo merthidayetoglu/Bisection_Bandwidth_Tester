@@ -20,4 +20,4 @@ There are preworked Makefiles and run scripts for Summit and Crusher in the repo
 
 Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions.
 
-Extension of this small tool with GASNet-EX would be great!
+Extension of this benchmarking tool with GASNet-EX would be great!
