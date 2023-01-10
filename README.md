@@ -14,16 +14,16 @@ The capabilities are controlled by preprocessor directives. With no specificatio
 <tbody>
   <tr>
     <td>Default is CPU</td>
-    <td>#define MPI</td>
-    <td>MPI Implementation with MPI_Isend / MPI_Irecv on CPU.</td>
+    <td>`#define MPI`</td>
+    <td>MPI Implementation with `MPI_Isend` / `MPI_Irecv` on CPU.</td>
   </tr>
   <tr>
-    <td>#define SCI_CUDA</td>
+    <td>`#define SCI_CUDA`</td>
     <td></td>
     <td></td>
   </tr>
   <tr>
-    <td>#define SCI_AMD</td>
+    <td>`#define SCI_HIP`</td>
     <td></td>
     <td></td>
   </tr>
