@@ -1,5 +1,5 @@
 # OLCF_BW_test
-Unit test for measuring system bandwidth. It is based on MPI but tests additional capabilites such as GPU-Aware MPI, CPU-Staged MPI, NCCL, and IPC.
+Unit test for measuring bisectional bandwidth. It is based on MPI but tests additional capabilites such as GPU-Aware MPI, CPU-Staged MPI, NCCL, and IPC.
 
 By default it works on CPU. To test Nvidia GPU, you need to ```#define SCI_CUDA```. To test AMD GPU, you need to ```#define SCI_HIP```.
 
@@ -17,3 +17,5 @@ Number of iterations is for averaging the bandwidth over many times. The program
 There are preworked Makefiles and run scripts for Summit and Crusher.
 
 ![Summit Measurements](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/summit_measurement.png)
+
+Please send and email to [Link text](linkurl)
