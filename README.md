@@ -17,7 +17,7 @@ where count is the number of words between two GPUs. Note that all involved GPUs
 
 Number of iterations is for averaging the bandwidth over many times. The program performs one warmup round and measures time over the number of iteration where each iteration are bulk-synchronized individually.
 
-There are preworked Makefiles and run scripts for Summit and Crusher in the repository.
+The figure below summarizes the Summit results. There are preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU.
 
 ![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/images/summit_measurement.png)
 
