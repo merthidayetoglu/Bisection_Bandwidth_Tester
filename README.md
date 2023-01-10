@@ -22,3 +22,15 @@ There are preworked Makefiles and run scripts for Summit and Crusher in the repo
 ![Summit Measurements](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/images/summit_measurement_corrected.png)
 
 Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this benchmarking tool with GASNet-EX would be great!
+
+<details><summary>More Results</summary>
+<p>
+
+#### We can hide anything, even code!
+
+```ruby
+   puts "Hello World"
+```
+
+</p>
+</details>
