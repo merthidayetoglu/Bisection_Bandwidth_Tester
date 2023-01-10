@@ -12,6 +12,7 @@ Considering a hierarchical communication network, MPI ranks are assumed to be as
 This tool runs like
 ```cpp
 mpirun -np #numproc Alltoall #count #numiter #groupsize
+for(int a = 0)
 ```
 where count is the number of words between two GPUs. Note that all involved GPUs both sends and receives data and the measurement is given as aggregate bi-directional bandwidth of a group.
 
