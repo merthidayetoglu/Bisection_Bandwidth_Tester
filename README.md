@@ -4,7 +4,7 @@ Unit test for measuring the bandwidth of communication of a group of processors 
 The capabilities are controlled by preprocessor directives. With no specification, it works on CPU by default. To test Nvidia GPU, one needs to ```#define SCI_CUDA```. To test AMD GPU, you need to ```#define SCI_HIP```.
 
 | Porting Options | Capability | |
-|:---: | :---: | |
+|:---: | :---: | :---: |
 | Default is CPU | Content Cell  | asdf |
 | `#define SCI_CUDA`  | Content Cell  | asdf |
 | `#define SCI_HIP`  | Content Cell  | asdf |
