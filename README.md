@@ -13,7 +13,7 @@ This tool runs like
 ```cpp
 mpirun -np #numproc Alltoall #count #numiter #groupsize
 ```
-where count is the number of words between two GPUs. There are preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder.
+where count is the number of words between two GPUs.
 
 Number of iterations is for averaging the bandwidth over many times. The program performs one warmup round and measures time over the number of iteration where each iteration are bulk-synchronized individually.
 
@@ -31,6 +31,8 @@ This table summarizes the implemented capabilities.
 
 
 Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this benchmarking tool with GASNet-EX capability would be great!
+
+Benchmarking results for various systems can be found below. There are preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder. Note that each system is like using a different sports car, which has different characteristics. This benchmarking tool helps understanding of these characteristics.
 
 <details><summary>Summit Results</summary>
 <p>
