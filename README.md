@@ -34,7 +34,7 @@ Running on each system is like driving a different sports car, which has differe
 
 Results are provided in the figure above. Summit has IBM Spectrum MPI, which uses a lower-level API called parallel active message interfece (PAMI). There is a known problem with CUDA-Aware MPI and its way of allocating hardware buffers.
 
-The PAMI variables are configured to have a lower latency [see here](https://docs.olcf.ornl.gov/systems/summit_user_guide.html#spectrum-mpi-tunings-needed-for-maximum-bandwidth). To obtain full theoretical bandwidth, we set up the PAMI variables as:
+By default, PAMI variables are configured to have a lower latency [see here](https://docs.olcf.ornl.gov/systems/summit_user_guide.html#spectrum-mpi-tunings-needed-for-maximum-bandwidth). To obtain full theoretical bandwidth, we set up the PAMI variables as:
 ```bash
 export PAMI_ENABLE_STRIPING=1
 export PAMI_IBV_ADAPTER_AFFINITY=1
