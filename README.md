@@ -46,6 +46,8 @@ Results with default configuration is shown below (not to be confused with the f
 
 NCCL performs irrespective of the PAMI configuration, because it uses UCX API across nodes. CPU-Staged MPI breaks down with large message sizes due to a known problem.
   
+[Summit User Guide](https://docs.olcf.ornl.gov/systems/summit_user_guide.html)
+  
 </p>
 </details>
 
@@ -55,7 +57,9 @@ NCCL performs irrespective of the PAMI configuration, because it uses UCX API ac
 Crusher is a testbed for Frontier&mdash;the first official exascale system. They have the same node architecture and software toolchain. It has Cray MPICH MPI implementation by default.
   
 ![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/crusher_measurement.png)
-
+  
+[Crusher User Guide](https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html)
+  
 </p>
 </details>
 
@@ -66,12 +70,16 @@ Delta is a system composed of multi-GPU nodes with four A100 GPUs each. It has O
   
 ![Delta Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/delta_measurement.png)
 
+[Delta User Guide](https://wiki.ncsa.illinois.edu/display/DSC/Delta+User+Guide)
+  
 </p>
 </details>
 
-Spock is an experimental system at OLCF: [see Spock user guide.](https://docs.olcf.ornl.gov/systems/spock_quick_start_guide.html)
+Spock is an experimental system at OLCF.
 
 ![Spock Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/spock_measurement.png)
+
+[Spock User Guide](https://docs.olcf.ornl.gov/systems/spock_quick_start_guide.html)
 
 <p>
 
