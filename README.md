@@ -17,7 +17,7 @@ where count is the number of 32-byte words between two GPUs. The number of itera
 
 The figure below summarizes the Summit results. Note that all involved GPUs both sends and receives data and the measurement of the aggregate bidirectional bandwidth of a group is reported in GB/s.
 
-![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement.png)
+![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement_bandwidth.png)
 
 We use the default MPI implementation in the system. You can find more details in the dropdown menu on the bottom of the page. The table below summarizes the implemented capabilities.
 
@@ -42,6 +42,9 @@ export PAMI_IBV_DEVICE_NAME_1="mlx5_3:1,mlx5_0:1"
 Results with the full-bandwidth configuration provided in the figure above.
 
 Results with default configuration is shown below.
+
+![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement_latency.png)
+
 </p>
 </details>
 
