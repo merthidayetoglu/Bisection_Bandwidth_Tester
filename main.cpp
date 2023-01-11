@@ -4,18 +4,21 @@
 #include <mpi.h>
 #include <omp.h>
 
-//#include <hip/hip_runtime.h>
-//#include <rccl.h>
-//#include <nccl.h>
-
 #define ROOT 0
 
-//#define SCI_HIP
-//#define SCI_CUDA
+// HEADERS
+//#include <hip/hip_runtime.h>
+//#include <rccl.h>
+#include <nccl.h>
 
-//#define MPI
-//#define MPI_Staged
-//#define NCCL
+// PORTS
+//#define SCI_HIP
+#define SCI_CUDA
+
+// CAPABILITIES
+#define MPI
+#define MPI_Staged
+#define NCCL
 //#define IPC
 
 // USER DEFINED TYPE
