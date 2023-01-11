@@ -51,6 +51,8 @@ Thanks [Chris Zimmer](https://www.olcf.ornl.gov/directory/staff-member/christoph
 <details><summary>Crusher Results</summary>
 <p>
 
+Crusher is a testbed for Frontier---the first official exascale system. They have the same node architecture and software toolchain.
+  
 ![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/crusher_measurement.png)
 
 </p>
