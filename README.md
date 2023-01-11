@@ -19,6 +19,8 @@ The figure below summarizes the Summit results. Note that all involved GPUs both
 
 ![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement.png)
 
+We use the default MPI implementation in the system. You can find more details in the dropdown menu on the bottom of the page.
+
 This table summarizes the implemented capabilities.
 
 | Porting Options   | Capability | Include |
