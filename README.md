@@ -32,7 +32,7 @@ This table summarizes the implemented capabilities.
 
 Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this benchmarking tool with GASNet-EX capability would be great!
 
-<details><summary>Crusher Results</summary>
+<details><summary>Summit Results</summary>
 <p>
 
 Results are provided in the figure above. Summit has IBM Spectrum MPI, which uses a lower-level API called parallel active message interfece (PAMI). There is a known problem with CUDA-Aware MPI and its way of allocating hardware buffers.
