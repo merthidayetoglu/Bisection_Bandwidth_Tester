@@ -1,5 +1,5 @@
 # Bisection Bandwidth Tester
-This repository involves a unit test for measuring the bandwidth of communication of a group of processors (mainly GPUs). It is based on MPI but tests additional capabilites such as GPU-Aware MPI, CPU-Staged MPI, NCCL, and IPC.
+This repository involves a unit test for measuring the bandwidth of communication of a group of processors (mainly GPUs). It is based on MPI and tests additional capabilites such as GPU-Aware MPI, CPU-Staged MPI, NCCL, and IPC.
 
 Porting the capabilities are controlled by preprocessor directives. With no specification, it targets CPU by default. To port on Nvidia GPUs, one needs to ```#define SCI_CUDA```. To port on AMD GPUs, one needs to ```#define SCI_HIP```. Please refer to the table at the bottom to enable desired capabilities.
 
@@ -7,7 +7,7 @@ There are two parameters to describe the logical group topology. The first one i
 
 ![Group Examples](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/group_examples.png)
 
-Considering a hierarchical communication network, MPI ranks are assumed to be assigned in as an SMP style. For example, if there are six GPUs and three nodes, GPU 0 and GPU 1 are in the same node and so GPU 2 and GPU3, and so on. The first GPU of a group talks to the first GPUs on other groups, the second GPU of a group talks to the corresponding second GPUs on other groups, and so on.
+Considering a hierarchical communication network, MPI ranks are assumed to be assigned in as an SMP style. For example, if there are six GPUs and three nodes, GPU 0 and GPU 1 are in the same node and so GPU 2 and GPU3. The first GPU of a group talks to the first GPU on each group, the second GPU of a group talks to the second GPU on each group, and so on. This test excludes the self communication.
 
 This tool runs like
 ```cpp
