@@ -75,6 +75,9 @@ Delta is a system composed of multi-GPU nodes with four A100 GPUs each. It has O
 </p>
 </details>
 
+
+<details><summary>Spock Results</summary>
+
 Spock is an experimental system at OLCF.
 
 ![Spock Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/spock_measurement.png)
