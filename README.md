@@ -46,7 +46,7 @@ export PAMI_IBV_ADAPTER_AFFINITY=1
 export PAMI_IBV_DEVICE_NAME="mlx5_0:1,mlx5_3:1"
 export PAMI_IBV_DEVICE_NAME_1="mlx5_3:1,mlx5_0:1"
 ```
-Thanks [Chris Zimmerman](https://www.olcf.ornl.gov/directory/staff-member/christopher-zimmer/) for helping me understanding this!
+Thanks [Chris Zimmer](https://www.olcf.ornl.gov/directory/staff-member/christopher-zimmer/) for helping me understanding this!
 </p>
 </details>
 
