@@ -7,19 +7,18 @@
 #define ROOT 0
 
 // HEADERS
-//#include <hip/hip_runtime.h>
-//#include <rccl.h>
-#include <nccl.h>
+#include <rccl.h>
+// #include <nccl.h>
 
 // PORTS
-//#define SCI_HIP
-#define SCI_CUDA
+// #define SCI_HIP
+// #define SCI_CUDA
 
 // CAPABILITIES
 #define MPI
-#define MPI_Staged
-#define NCCL
-//#define IPC
+// #define MPI_Staged
+// #define NCCL
+// #define IPC
 
 // USER DEFINED TYPE
 struct Type
