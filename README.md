@@ -27,9 +27,6 @@ This table summarizes the implemented capabilities.
 |`#define SCI_CUDA` | CUDA-Aware MPI <br> CPU-Staged MPI <br> NCCL <br> CUDA IPC | `#define MPI` <br> `#define MPI_Staged` <br> `#define NCCL` <br> `#define IPC` |
 |`#define SCI_HIP`  | GPU-Aware MPI <br> CPU-Staged MPI <br> (AMD port) NCCL <br> HIP IPC | `#define MPI` <br> `#define MPI_Staged` <br> `#define NCCL` <br> `#define IPC` |
 
-
-Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this benchmarking tool with GASNet-EX capability would be great!
-
 Running on each system is like driving a different sports car, which has different handling and behaviour. This benchmarking tool helps understanding of the system characteristics. Our evaluation of various systems can be found below.
 
 <details><summary>Summit Results</summary>
@@ -78,3 +75,5 @@ Crusher is a testbed for Frontier---the first official exascale system. They hav
 </details>
 
 For reproducibility, we provide the preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder.
+
+Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this benchmarking tool with GASNet-EX and NVSHMEM capabilities would be great!
