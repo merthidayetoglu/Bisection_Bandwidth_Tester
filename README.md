@@ -5,7 +5,7 @@ Porting the capabilities are controlled by preprocessor directives. With no spec
 
 There are two parameters to describe the logical group topology. The first one is the number of processors and the second one is the group size. The benchmarking tool splits the global communicator ```MPI_COMM_WORLD``` into subcommunicators with ```MPI_Comm_split```. Eeach group talks to all other groups with a mapping between GPU as shown in the figure below. These partitioning scenarios can be applied to test communication bandwidth accross nodes, among GPUs within nodes, and between pairs of GPUs. In this scheme, each MPI rank runs a single GPU.
 
-![Group Examples](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/scripts/group_examples.png)
+![Group Examples](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/group_examples.png)
 
 Considering a hierarchical communication network, MPI ranks are assumed to be assigned in as an SMP style. For example, if there are six GPUs and three nodes, GPU 0 and GPU 1 are in the same node and so GPU 2 and GPU3, and so on. The first GPU of a group talks to the first GPUs on other groups, the second GPU of a group talks to the corresponding second GPUs on other groups, and so on.
 
@@ -17,7 +17,7 @@ where count is the number of 32-byte words between two GPUs. The number of itera
 
 The figure below summarizes the Summit results. Note that all involved GPUs both sends and receives data and the measurement of the aggregate bidirectional bandwidth of a group is reported in GB/s.
 
-![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement_bandwidth.png)
+![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/summit_measurement_bandwidth.png)
 
 We use the default MPI implementation in the system. You can find more details in the dropdown menu on the bottom of the page. The table below summarizes the implemented capabilities.
 
@@ -54,7 +54,7 @@ NCCL performs irrespective of the PAMI configuration, because it uses UCX API ac
 
 Crusher is a testbed for Frontier&mdash;the first official exascale system. They have the same node architecture and software toolchain. It has Cray MPICH MPI implementation by default.
   
-![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/crusher_measurement.png)
+![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/crusher_measurement.png)
 
 </p>
 </details>
@@ -64,7 +64,7 @@ Crusher is a testbed for Frontier&mdash;the first official exascale system. They
 
 Delta is a system composed of multi-GPU nodes with four A100 GPUs each. It has OpenMPI+UCX implementation by default.
   
-![Delta Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/delta_measurement.png)
+![Delta Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/delta_measurement.png)
 
 </p>
 </details>
