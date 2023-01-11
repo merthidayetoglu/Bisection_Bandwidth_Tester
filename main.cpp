@@ -7,8 +7,8 @@
 #define ROOT 0
 
 // HEADERS
-#include <rccl.h>
 // #include <nccl.h>
+// #include <rccl.h>
 
 // PORTS
 // #define SCI_HIP
