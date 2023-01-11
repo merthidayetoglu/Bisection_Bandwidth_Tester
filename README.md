@@ -15,7 +15,7 @@ mpirun -np #numproc Alltoall #count #numiter #groupsize
 ```
 where count is the number of 32-byte words between two GPUs. The number of iterations is for averaging the bandwidth over many times. The program performs one warmup round and measures time over the number of iteration where each iteration are bulk-synchronized individually.
 
-The figure below summarizes the Summit results. Note that all involved GPUs both sends and receives data and the measurement is given as aggregate bi-directional bandwidth of a group.
+The figure below summarizes the Summit results. Note that all involved GPUs both sends and receives data and the measurement of the aggregate bidirectional bandwidth of a group is reported in GB/s.
 
 ![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement.png)
 
