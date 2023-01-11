@@ -51,7 +51,7 @@ Results with default configuration is shown below.
 <details><summary>Crusher Results</summary>
 <p>
 
-Crusher is a testbed for Frontier&mdash;the first official exascale system. They have the same node architecture and software toolchain.
+Crusher is a testbed for Frontier&mdash;the first official exascale system. They have the same node architecture and software toolchain. It has Cray MPICH MPI implementation by default.
   
 ![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/crusher_measurement.png)
 
