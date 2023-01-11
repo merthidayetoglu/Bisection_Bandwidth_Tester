@@ -66,7 +66,7 @@ Crusher is a testbed for Frontier&mdash;the first official exascale system. They
 <details><summary>Delta Results</summary>
 <p>
 
-Delta is a system composed of multi-GPU nodes with four A100 GPUs each. It has OpenMPI+UCX implementation by default.
+Delta is an NCSA system that is composed of multi-GPU nodes with four Nvidia A100 GPUs each. It has Slingshot 10 and runs OpenMPI+UCX by default.
   
 ![Delta Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/delta_measurement.png)
 
@@ -79,7 +79,7 @@ Delta is a system composed of multi-GPU nodes with four A100 GPUs each. It has O
 <details><summary>Spock Results</summary>
 <p>
   
-Spock is an experimental system at OLCF.
+Spock is an experimental system at OLC that is composed of multi-GPU nodes with four AMD MI100 GPUs each. It has Slingshot 10 and runs OpenMPI+UCX by default.
 
 ![Spock Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/spock_measurement.png)
 
