@@ -27,7 +27,7 @@ We use the default MPI implementation in the system. You can find more details i
 |`#define SCI_CUDA` | CUDA-Aware MPI <br> CPU-Staged MPI <br> NCCL <br> CUDA IPC | `#define MPI` <br> `#define MPI_Staged` <br> `#define NCCL` <br> `#define IPC` |
 |`#define SCI_HIP`  | GPU-Aware MPI <br> CPU-Staged MPI <br> (AMD port) NCCL <br> HIP IPC | `#define MPI` <br> `#define MPI_Staged` <br> `#define NCCL` <br> `#define IPC` |
 
-Running on each system is like driving a different sports car, which has different handling and behaviour. This benchmarking tool helps understanding of the system characteristics. Our evaluation of various systems can be found below.
+Running on each system is like driving a different sports car, which has different handling and steering behaviour. This benchmarking tool helps understanding of the system characteristics. Our evaluation of various systems can be found below.
 
 <details><summary>Summit Results</summary>
 <p>
@@ -44,7 +44,7 @@ Results with default configuration is shown below (not to be confused with the f
 
 ![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement_latency.png)
 
-NCCL performs irrespective of the PAMI configuration. CPU-Staged MPI breaks down with large message sizes due to a known problem.
+NCCL performs irrespective of the PAMI configuration, because it uses UCX API across nodes. CPU-Staged MPI breaks down with large message sizes due to a known problem.
   
 </p>
 </details>
