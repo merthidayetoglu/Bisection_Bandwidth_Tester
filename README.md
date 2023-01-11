@@ -39,9 +39,8 @@ export PAMI_IBV_ADAPTER_AFFINITY=1
 export PAMI_IBV_DEVICE_NAME="mlx5_0:1,mlx5_3:1"
 export PAMI_IBV_DEVICE_NAME_1="mlx5_3:1,mlx5_0:1"
 ```
-Results with the full-bandwidth configuration provided in the figure above.
 
-Results with default configuration is shown below.
+Results with default configuration is shown below (not to be confused with the full-bandwidth configuration that is shown above).
 
 ![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement_latency.png)
 
