@@ -6,17 +6,17 @@
 
 //#include <hip/hip_runtime.h>
 //#include <rccl.h>
-#include <nccl.h>
+//#include <nccl.h>
 
 #define ROOT 0
 
 //#define SCI_HIP
-#define SCI_CUDA
+//#define SCI_CUDA
 
-#define MPI
-#define MPI_Staged
-#define NCCL
-#define IPC
+//#define MPI
+//#define MPI_Staged
+//#define NCCL
+//#define IPC
 
 // USER DEFINED TYPE
 struct Type

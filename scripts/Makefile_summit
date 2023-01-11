@@ -16,10 +16,7 @@ OBJECTS = main.o
 
 all:	$(TARGETS)
 
-%.o: %.cpp
-	${CXX} ${CXXFLAGS} ${OPTFLAGS} $< -c -o $@
-
-%.o : %.cu
+%.o : %.cpp
 	${NVCC} ${NVCCFLAGS} $< -c -o $@
 
 Alltoall: $(OBJECTS)
