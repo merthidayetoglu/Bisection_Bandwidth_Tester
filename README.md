@@ -44,6 +44,8 @@ Results with default configuration is shown below (not to be confused with the f
 
 ![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/summit_measurement_latency.png)
 
+NCCL performs irrespective of the PAMI configuration. CPU-Staged MPI breaks down with large message sizes due to a known problem.
+  
 </p>
 </details>
 
