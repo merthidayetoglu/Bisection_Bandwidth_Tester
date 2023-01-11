@@ -35,6 +35,22 @@ Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questi
 <details><summary>Crusher Results</summary>
 <p>
 
+Results are provided in the figure above. Summit has IBM Spectrum MPI, which uses a lower-level API called parallel active message interfece (PAMI). There is a known problem with CUDA-Aware MPI and its way of allocating hardware buffers.
+
+To obtain full theoretical bandwidth, we set up the PAMI variables as:
+```bash
+export PAMI_ENABLE_STRIPING=1
+export PAMI_IBV_ADAPTER_AFFINITY=1
+export PAMI_IBV_DEVICE_NAME="mlx5_0:1,mlx5_3:1"
+export PAMI_IBV_DEVICE_NAME_1="mlx5_3:1,mlx5_0:1"
+```
+
+</p>
+</details>
+
+<details><summary>Crusher Results</summary>
+<p>
+
 ![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/crusher_measurement.png)
 
 </p>
