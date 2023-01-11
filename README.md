@@ -29,7 +29,7 @@ We use the default MPI implementation in the system. You can find more details i
 
 Running on each system is like driving a different sports car, which has different handling and steering behaviour. This benchmarking tool helps understanding of the system characteristics. Our evaluation of various systems can be found below.
 
-<details><summary>Summit Results</summary>
+<details><summary>Summit Results (Cont'd)</summary>
 <p>
 
 Summit has IBM Spectrum MPI, which uses a lower-level API called parallel active message interfece (PAMI). By default, PAMI variables are configured to have a lower latency [as reported here](https://docs.olcf.ornl.gov/systems/summit_user_guide.html#spectrum-mpi-tunings-needed-for-maximum-bandwidth). Thanks [Chris Zimmer](https://www.olcf.ornl.gov/directory/staff-member/christopher-zimmer/) for pointing it out! To obtain full theoretical bandwidth, we set up the PAMI variables as:
