@@ -11,7 +11,7 @@
 // #include <nccl.h>
 
 // PORTS
- #define SCI_HIP
+// #define SCI_HIP
 // #define SCI_CUDA
 
 // CAPABILITIES
@@ -28,16 +28,6 @@ struct Type
   // complex<double> x, y, z;
 };
 
-template <typename T>
-void copy(const T *sendbuf, const int senddim, T *recvbuf) {
-#ifdef SCI_CUDA
-  cudaMemcpy(recvbuf, sendbuf, senddim * sizeof(T), cudaMemcpyDeviceToDevice);
-#elif defined SCI_HIP
-  hipMemcpy(recvbuf, sendbuf, senddim * sizeof(T), hipMemcpyDeviceToDevice);
-#else
-  memcpy(recvbuf, sendbuf, senddim * sizeof(T));
-#endif
-}
 
 int main(int argc, char *argv[])
 {
@@ -45,7 +35,6 @@ int main(int argc, char *argv[])
   // INITIALIZE MPI+OpenMP
   int myid;
   int numproc;
-
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   MPI_Comm_size(MPI_COMM_WORLD, &numproc);
