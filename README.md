@@ -7,7 +7,7 @@ There are two parameters to describe the logical group topology. The first one i
 
 ![Group Examples](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/group_examples.png)
 
-Considering a hierarchical communication network, MPI ranks are assumed to be assigned in as an SMP style. For example, if there are six GPUs and three nodes, GPU 0 and GPU 1 are in the same node and so GPU 2 and GPU3, and so on. The first GPU of a group talks to the first GPUs on other groups, the second GPU of a group talks to the corresponding second GPUs on other groups, and so on.
+Considering a hierarchical communication network, MPI ranks are assumed to be assigned in as an SMP style. For example, if there are six GPUs and three nodes, GPU 0 and GPU 1 are in the same node and so GPU 2 and GPU3. The first GPU of a group talks to the first GPU on each group, the second GPU of a group talks to the second GPU on each group, and so on. This test excludes the self communication.
 
 This tool runs like
 ```cpp
