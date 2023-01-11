@@ -1,3 +1,5 @@
+
+module reset
 module load craype-accel-amd-gfx908
 module load PrgEnv-cray
 module load rocm

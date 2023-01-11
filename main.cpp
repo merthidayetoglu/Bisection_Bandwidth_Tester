@@ -11,7 +11,7 @@
 // #include <nccl.h>
 
 // PORTS
-// #define SCI_HIP
+ #define SCI_HIP
 // #define SCI_CUDA
 
 // CAPABILITIES
@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
   // INITIALIZE MPI+OpenMP
   int myid;
   int numproc;
+
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   MPI_Comm_size(MPI_COMM_WORLD, &numproc);

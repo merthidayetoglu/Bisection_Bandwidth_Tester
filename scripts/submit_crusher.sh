@@ -1,7 +1,8 @@
 
 module reset
-module load rocm
 module load craype-accel-amd-gfx90a
+module load PrgEnv-cray
+module load rocm
 
 export MPICH_GPU_SUPPORT_ENABLED=1
 
