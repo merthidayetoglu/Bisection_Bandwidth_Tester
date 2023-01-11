@@ -32,7 +32,7 @@ This table summarizes the implemented capabilities.
 
 Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this benchmarking tool with GASNet-EX capability would be great!
 
-Benchmarking results for various systems can be found below. For reproducibility, we provide the preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder. Running on each system is like driving a different sports car, which has different handling behaviour. This benchmarking tool helps understanding of the system characteristics.
+For reproducibility, we provide the preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder. Running on each system is like driving a different sports car, which has different handling behaviour. This benchmarking tool helps understanding of the system characteristics. Our evaluation of various systems can be found below.
 
 <details><summary>Summit Results</summary>
 <p>
