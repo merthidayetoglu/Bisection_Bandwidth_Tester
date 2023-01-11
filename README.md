@@ -62,6 +62,10 @@ Crusher is a testbed for Frontier&mdash;the first official exascale system. They
 <details><summary>Delta Results</summary>
 <p>
 
+Delta is a system composed of multi-GPU nodes with four A100 GPUs each. It has OpenMPI+UCX implementation by default.
+  
+![Delta Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/scripts/delta_measurement.png)
+
 </p>
 </details>
 
