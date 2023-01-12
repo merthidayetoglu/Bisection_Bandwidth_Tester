@@ -22,12 +22,12 @@
 #define ROOT 0
 
 // HEADERS
-// #include <nccl.h>
- #include <rccl.h>
+ #include <nccl.h>
+// #include <rccl.h>
 
 // PORTS
- #define SCI_HIP
-// #define SCI_CUDA
+ #define SCI_CUDA
+// #define SCI_HIP
 
 // CAPABILITIES
  #define MPI
