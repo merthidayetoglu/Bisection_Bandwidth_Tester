@@ -71,11 +71,8 @@ int main(int argc, char *argv[])
     printf("Number of nodes: %d\n", numnode);
     printf("Bytes per Type %lu\n", sizeof(Type));
     printf("Peer-to-peer count %ld ( %ld Bytes)\n", count, count * sizeof(Type));
-    printf("\n");
-  }
-
-  if(myid == ROOT) {
     printf("send buffer: %lu (%.2f GB) recv buffer: %lu (%.2f GB)\n\n", count, count * sizeof(Type) / 1.e9, count * numnode, count * numnode * sizeof(Type) / 1.e9);
+    printf("\n");
   }
 
   Type *sendbuf = new Type[count];
@@ -168,11 +165,8 @@ int main(int argc, char *argv[])
       for(int node = 0; node < numnode; node++)
         if(node != mynode) {
           MPI_Irecv(recvbuf_d + node * count, count * sizeof(Type), MPI_BYTE, node, MPI_ANY_TAG, comm, recvrequest + recvproc);
-          recvproc++;
-        }
-      for(int node = 0; node < numnode; node++)
-        if(node != mynode) {
           MPI_Isend(sendbuf_d               , count * sizeof(Type), MPI_BYTE, node, 0, comm, sendrequest + sendproc);
+          recvproc++;
           sendproc++;
         }
       MPI_Waitall(recvproc, recvrequest, MPI_STATUSES_IGNORE);
@@ -199,9 +193,6 @@ int main(int argc, char *argv[])
         if(node != mynode) {
           MPI_Irecv(recvbuf_d + node * count, count * sizeof(Type), MPI_BYTE, node, MPI_ANY_TAG, comm, recvrequest + recvproc);
           recvproc++;
-        }
-      for(int node = 0; node < numnode; node++)
-        if(node != mynode) {
           MPI_Isend(sendbuf_d               , count * sizeof(Type), MPI_BYTE, node, 0, comm, sendrequest + sendproc);
           sendproc++;
         }
