@@ -1,3 +1,18 @@
+/* Copyright 2023 Stanford University
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <stdio.h> // for printf
 #include <stdlib.h> // for atoi
 #include <cstring> // for memcpy
@@ -8,16 +23,16 @@
 
 // HEADERS
 // #include <nccl.h>
-// #include <rccl.h>
+ #include <rccl.h>
 
 // PORTS
-// #define SCI_HIP
+ #define SCI_HIP
 // #define SCI_CUDA
 
 // CAPABILITIES
-#define MPI
-// #define MPI_Staged
-// #define NCCL
+ #define MPI
+ #define MPI_Staged
+ #define NCCL
 // #define IPC
 
 // USER DEFINED TYPE
@@ -28,10 +43,8 @@ struct Type
   // complex<double> x, y, z;
 };
 
-
 int main(int argc, char *argv[])
 {
-
   // INITIALIZE MPI+OpenMP
   int myid;
   int numproc;
@@ -42,7 +55,7 @@ int main(int argc, char *argv[])
   #pragma omp parallel
   if(omp_get_thread_num() == 0)
     numthread = omp_get_num_threads();
-  long count = atoi(argv[1]);
+  size_t count = atoi(argv[1]);
   int numiter = atoi(argv[2]);
   int groupsize = atoi(argv[3]);
   int numnode = numproc / groupsize;
@@ -57,8 +70,12 @@ int main(int argc, char *argv[])
     printf("Number of proc. per node: %d\n", groupsize);
     printf("Number of nodes: %d\n", numnode);
     printf("Bytes per Type %lu\n", sizeof(Type));
-    printf("Peer-to-peer count %ld ( %.2e MB)\n", count, count * sizeof(Type) / 1.e6);
+    printf("Peer-to-peer count %ld ( %ld Bytes)\n", count, count * sizeof(Type));
     printf("\n");
+  }
+
+  if(myid == ROOT) {
+    printf("send buffer: %lu (%.2f GB) recv buffer: %lu (%.2f GB)\n\n", count, count * sizeof(Type) / 1.e9, count * numnode, count * numnode * sizeof(Type) / 1.e9);
   }
 
   Type *sendbuf = new Type[count];
