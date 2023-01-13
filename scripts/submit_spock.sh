@@ -9,7 +9,4 @@ export MPIR_CVAR_GPU_EAGER_DEVICE_MEM=0
 export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_SMP_SINGLE_COPY_MODE=CMA
 
-##export MPICH_OFI_NIC_VERBOSE=2
-##export MPICH_ENV_DISPLAY=1
-
 salloc -A CHM137 -p caar -t 00:30:00 -N 2 --ntasks-per-node=4 --gpus-per-node=4 --gpu-bind=closest
