@@ -88,7 +88,7 @@ Delta is an NCSA system that is composed of multi-GPU nodes with four Nvidia A10
 <details><summary>Spock Results</summary>
 <p>
   
-Spock is an experimental system at OLC that is composed of multi-GPU nodes with four AMD MI100 GPUs each. It has Slingshot 10 and runs OpenMPI+UCX by default.
+Spock is an experimental system at OLC that is composed of multi-GPU nodes with four AMD MI100 GPUs each. It has Slingshot 10 and runs Cray MPICH+OFI by default. We also tried Cray MPICH+UCX by loading modules `craype-network-ucx` and `cray-mpich-ucx`.
 
 ![Spock Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/spock_measurement.png)
 
