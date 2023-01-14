@@ -92,7 +92,7 @@ Spock is an experimental system at OLC that is composed of multi-GPU nodes with 
 
 ![Spock Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/spock_measurement.png)
 
-The results below are taken within one node.
+The results below are taken within one node with the default MPI because Cray MPICH+UCX crahes with buffer size larger than 16 KB when GPUs are involved.
 
 ![Spock Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/spock_within_nodes.png)
 
