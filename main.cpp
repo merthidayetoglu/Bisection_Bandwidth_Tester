@@ -58,8 +58,8 @@ int main(int argc, char *argv[])
   size_t count = atoi(argv[1]);
   int numiter = atoi(argv[2]);
   int groupsize = atoi(argv[3]);
-  int numnode = numproc / groupsize;
-  int mynode = myid / groupsize;
+  int numgroup = numproc / groupsize;
+  int mygroup = myid / groupsize;
   // PRINT NUMBER OF PROCESSES AND THREADS
   if(myid == ROOT)
   {
@@ -67,16 +67,16 @@ int main(int argc, char *argv[])
     printf("Number of processes: %d\n", numproc);
     printf("Number of threads per proc: %d\n", numthread);
     printf("Number of iterations %d\n", numiter);
-    printf("Number of proc. per node: %d\n", groupsize);
-    printf("Number of nodes: %d\n", numnode);
+    printf("Number of proc. per group: %d\n", groupsize);
+    printf("Number of groups: %d\n", numgroup);
     printf("Bytes per Type %lu\n", sizeof(Type));
     printf("Peer-to-peer count %ld ( %ld Bytes)\n", count, count * sizeof(Type));
-    printf("send buffer: %lu (%.2f GB) recv buffer: %lu (%.2f GB)\n\n", count, count * sizeof(Type) / 1.e9, count * numnode, count * numnode * sizeof(Type) / 1.e9);
+    printf("send buffer: %lu (%.2f GB) recv buffer: %lu (%.2f GB)\n", count, count * sizeof(Type) / 1.e9, count * numgroup, count * numgroup * sizeof(Type) / 1.e9);
     printf("\n");
   }
 
   Type *sendbuf = new Type[count];
-  Type *recvbuf = new Type[count * numnode];
+  Type *recvbuf = new Type[count * numgroup];
   Type *sendbuf_d;
   Type *recvbuf_d;
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     sendbuf[i].data[0] = myid;
 
   MPI_Comm comm;
-  MPI_Comm_split(MPI_COMM_WORLD, myid % groupsize, mynode, &comm);
+  MPI_Comm_split(MPI_COMM_WORLD, myid % groupsize, mygroup, &comm);
 
 #ifdef SCI_CUDA
   if(myid == ROOT)
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
   cudaSetDevice(device);
   // MEMORY MANAGEMENT
   cudaMalloc(&sendbuf_d, count * sizeof(Type));
-  cudaMalloc(&recvbuf_d, count * numnode * sizeof(Type));
+  cudaMalloc(&recvbuf_d, count * numgroup * sizeof(Type));
   cudaMemcpy(sendbuf_d, sendbuf, count * sizeof(Type), cudaMemcpyHostToDevice);
   // DONE
   // REPORT
@@ -134,76 +134,62 @@ int main(int argc, char *argv[])
   hipSetDevice(device);
   // MEMORY MANAGEMENT
   hipMalloc(&sendbuf_d, count * sizeof(Type));
-  hipMalloc(&recvbuf_d, count * numnode * sizeof(Type));
+  hipMalloc(&recvbuf_d, count * numgroup * sizeof(Type));
   hipMemcpy(sendbuf_d, sendbuf, count * sizeof(Type), hipMemcpyHostToDevice);
   // DONE
   // REPORT
-  if(myid == ROOT) {
+  if(myid == ROOT)
     system("rocm-smi");
-  }
 #else
   if(myid == ROOT)
     printf("CPU VERSION\n");
   // MEMORY MANAGEMENT
   sendbuf_d = new Type[count];
-  recvbuf_d = new Type[count * numnode];
+  recvbuf_d = new Type[count * numgroup];
   memcpy(sendbuf_d, sendbuf, count * sizeof(Type));
   // DONE
 #endif
-
 
 #ifdef MPI
   {
     if(myid == ROOT)
       printf("ENABLE GPU-Aware MPI\n");
-    {
-      MPI_Request sendrequest[numnode];
-      MPI_Request recvrequest[numnode];
-      int sendproc = 0;
-      int recvproc = 0;
-      double time = MPI_Wtime();
-      MPI_Barrier(MPI_COMM_WORLD);
-      for(int node = 0; node < numnode; node++)
-        if(node != mynode) {
-          MPI_Irecv(recvbuf_d + node * count, count * sizeof(Type), MPI_BYTE, node, MPI_ANY_TAG, comm, recvrequest + recvproc);
-          MPI_Isend(sendbuf_d               , count * sizeof(Type), MPI_BYTE, node, 0, comm, sendrequest + sendproc);
-          recvproc++;
-          sendproc++;
-        }
-      MPI_Waitall(recvproc, recvrequest, MPI_STATUSES_IGNORE);
-      MPI_Barrier(MPI_COMM_WORLD);
-      time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("warmup time: %e\n", time);
-    }
     double totalTime = 0;
     double totalData = 0;
     for(int iter = 0; iter < numiter; iter++)
     {
 #if !defined SCI_CUDA && !defined SCI_HIP
       memset(sendbuf_d, 0, count * sizeof(Type));
-      memset(recvbuf_d, 0, numnode * count * sizeof(Type));
+      memset(recvbuf_d, 0, numgroup * count * sizeof(Type));
 #endif
-      MPI_Request sendrequest[numnode];
-      MPI_Request recvrequest[numnode];
+      MPI_Request sendrequest[numgroup];
+      MPI_Request recvrequest[numgroup];
       int sendproc = 0;
       int recvproc = 0;
       double time = MPI_Wtime();
       MPI_Barrier(MPI_COMM_WORLD);
-      for(int node = 0; node < numnode; node++)
-        if(node != mynode) {
-          MPI_Irecv(recvbuf_d + node * count, count * sizeof(Type), MPI_BYTE, node, MPI_ANY_TAG, comm, recvrequest + recvproc);
+      for(int group = 0; group < numgroup; group++)
+        if(group != mygroup) {
+          MPI_Irecv(recvbuf_d + group * count, count * sizeof(Type), MPI_BYTE, group, MPI_ANY_TAG, comm, recvrequest + recvproc);
           recvproc++;
-          MPI_Isend(sendbuf_d               , count * sizeof(Type), MPI_BYTE, node, 0, comm, sendrequest + sendproc);
+          MPI_Isend(sendbuf_d                , count * sizeof(Type), MPI_BYTE, group, 0, comm, sendrequest + sendproc);
           sendproc++;
         }
       MPI_Waitall(recvproc, recvrequest, MPI_STATUSES_IGNORE);
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("time: %e\n", time);
-      totalTime += time;
-      totalData += 2 * (numnode - 1) * count * sizeof(Type) / 1.e9;
+      if(iter == 0)
+      {
+        if(myid == ROOT)
+          printf("warmup time: %e\n", time);
+      }
+      else
+      {
+        if(myid == ROOT)
+          printf("time: %e\n", time);
+        totalTime += time;
+        totalData += 2 * (numgroup - 1) * count * sizeof(Type) / 1.e9;
+      }
     }
     if(myid == ROOT)
       printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- GPU-Aware MPI\n", totalTime, totalData, totalData / totalTime * groupsize);
@@ -214,119 +200,57 @@ int main(int argc, char *argv[])
   { 
     if(myid == ROOT)
       printf("ENABLE CPU-Staged MPI\n");
+    // ********************************************* SETUP CPU-Staged MPI **********************************************************
     Type *sendbuf_h;
     Type *recvbuf_h;
 #ifdef SCI_CUDA
-    cudaMallocHost(&sendbuf_h, count * numnode * sizeof(Type));
-    cudaMallocHost(&recvbuf_h, count * numnode * sizeof(Type));
-    cudaStream_t recvstream[numnode];
-    for(int node = 0; node < numnode; node++)
-      cudaStreamCreate(recvstream + node);
+    cudaMallocHost(&sendbuf_h, count * numgroup * sizeof(Type));
+    cudaMallocHost(&recvbuf_h, count * numgroup * sizeof(Type));
+    cudaStream_t stream[numgroup];
+    for(int group = 0; group < numgroup; group++)
+      cudaStreamCreate(stream + group);
 #elif defined SCI_HIP
-    hipHostMalloc(&sendbuf_h, count * numnode * sizeof(Type), 0);
-    hipHostMalloc(&recvbuf_h, count * numnode * sizeof(Type), 0);
-    hipStream_t recvstream[numnode];
-    for(int node = 0; node < numnode; node++)
-      hipStreamCreate(recvstream + node);
+    hipHostMalloc(&sendbuf_h, count * numgroup * sizeof(Type), 0);
+    hipHostMalloc(&recvbuf_h, count * numgroup * sizeof(Type), 0);
+    hipStream_t stream[numgroup];
+    for(int group = 0; group < numgroup; group++)
+      hipStreamCreate(stream + group);
 #endif
-    {
-      MPI_Request sendrequest[numnode];
-      MPI_Request recvrequest[numnode];
-      bool sendcomplete[numnode];
-      bool recvcomplete[numnode];
-      memset(sendcomplete, 0, numnode);
-      memset(recvcomplete, 0, numnode);
-      double time = MPI_Wtime();
-      MPI_Barrier(MPI_COMM_WORLD);
-      for(int node = 0; node < numnode; node++)
-        if(node != mynode) {
-          MPI_Irecv(recvbuf_h + node * count, count * sizeof(Type), MPI_BYTE, node, MPI_ANY_TAG, comm, recvrequest + node);
-#ifdef SCI_CUDA
-          cudaMemcpyAsync(sendbuf_h + node * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToHost, recvstream[node]);
-#elif defined SCI_HIP
-          hipMemcpyAsync(sendbuf_h + node * count, sendbuf_d, count * sizeof(Type), hipMemcpyDeviceToHost, recvstream[node]);
-#endif
-        }
-      // SEND LOOP
-      bool done_send = false;
-      while(!done_send) {
-        done_send = true;
-        for(int node = 0; node < numnode; node++)
-          if(node != mynode && !sendcomplete[node]) {
-#ifdef SCI_CUDA
-            if(cudaStreamQuery(recvstream[node]) == cudaSuccess) {
-#elif defined SCI_HIP
-            if(hipStreamQuery(recvstream[node]) == hipSuccess) {
-#endif
-              MPI_Isend(sendbuf_h + node * count, count * sizeof(Type), MPI_BYTE, node, 0, comm, sendrequest + node);
-              sendcomplete[node] = true;
-            }
-            done_send = false;
-          }
-      }
-      // MEMCPY LOOP
-      bool done_recv = false;
-      while(!done_recv) {
-        done_recv = true;
-        for(int node = 0; node < numnode; node++)
-          if(node != mynode && !recvcomplete[node]) {
-            int flag = 0;
-            MPI_Test(recvrequest + node, &flag, MPI_STATUS_IGNORE);
-            if(flag) {
-#ifdef SCI_CUDA
-              cudaMemcpyAsync(recvbuf_d + node * count, recvbuf_h + node * count, count * sizeof(Type), cudaMemcpyHostToDevice, recvstream[node]);
-#elif defined SCI_HIP
-              hipMemcpyAsync(recvbuf_d + node * count, recvbuf_h + node * count, count * sizeof(Type), hipMemcpyHostToDevice, recvstream[node]);
-#endif
-              recvcomplete[node] = true;
-            }
-            done_recv = false;
-          }
-      }
-#ifdef SCI_CUDA
-      cudaDeviceSynchronize();
-#elif defined SCI_HIP
-      hipDeviceSynchronize();
-#endif
-      MPI_Barrier(MPI_COMM_WORLD);
-      time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("warmup time: %e\n", time);
-    }
+    MPI_Request sendrequest[numgroup];
+    MPI_Request recvrequest[numgroup];
+    bool sendcomplete[numgroup];
+    bool recvcomplete[numgroup];
+    // *****************************************************************************************************************************
     double totalTime = 0;
     double totalData = 0;
-    for(int iter = 0; iter < numiter; iter++)
+    for(int iter = 0; iter < numiter + 1; iter++)
     { 
-      MPI_Request sendrequest[numnode];
-      MPI_Request recvrequest[numnode];
-      bool sendcomplete[numnode];
-      bool recvcomplete[numnode];
-      memset(sendcomplete, 0, numnode);
-      memset(recvcomplete, 0, numnode);
+      memset(sendcomplete, 0, numgroup);
+      memset(recvcomplete, 0, numgroup);
       double time = MPI_Wtime();
       MPI_Barrier(MPI_COMM_WORLD);
-      for (int node = 0; node < numnode; node++)
-        if(node != mynode) {
-          MPI_Irecv(recvbuf_h + node * count, count * sizeof(Type), MPI_BYTE, node, MPI_ANY_TAG, comm, recvrequest + node);
+      for (int group = 0; group < numgroup; group++)
+        if(group != mygroup) {
+          MPI_Irecv(recvbuf_h + group * count, count * sizeof(Type), MPI_BYTE, group, MPI_ANY_TAG, comm, recvrequest + group);
 #ifdef SCI_CUDA
-          cudaMemcpyAsync(sendbuf_h + node * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToHost, recvstream[node]);
+          cudaMemcpyAsync(sendbuf_h + group * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToHost, stream[group]);
 #elif defined SCI_HIP
-          hipMemcpyAsync(sendbuf_h + node * count, sendbuf_d, count * sizeof(Type), hipMemcpyDeviceToHost, recvstream[node]);
+          hipMemcpyAsync(sendbuf_h + group * count, sendbuf_d, count * sizeof(Type), hipMemcpyDeviceToHost, stream[group]);
 #endif
         }
       // SEND LOOP
       bool done_send = false;
       while(!done_send) {
         done_send = true;
-        for(int node = 0; node < numnode; node++)
-          if(node != mynode && !sendcomplete[node]) {
+        for(int group = 0; group < numgroup; group++)
+          if(group != mygroup && !sendcomplete[group]) {
 #ifdef SCI_CUDA
-            if(cudaStreamQuery(recvstream[node]) == cudaSuccess) {
+            if(cudaStreamQuery(stream[group]) == cudaSuccess) {
 #elif defined SCI_HIP
-            if(hipStreamQuery(recvstream[node]) == hipSuccess) {
+            if(hipStreamQuery(stream[group]) == hipSuccess) {
 #endif
-              MPI_Isend(sendbuf_h + node * count, count * sizeof(Type), MPI_BYTE, node, 0, comm, sendrequest + node);
-              sendcomplete[node] = true;
+              MPI_Isend(sendbuf_h + group * count, count * sizeof(Type), MPI_BYTE, group, 0, comm, sendrequest + group);
+              sendcomplete[group] = true;
             }
             done_send = false;
           }
@@ -335,17 +259,17 @@ int main(int argc, char *argv[])
       bool done_recv = false;
       while(!done_recv) {
         done_recv = true;
-        for(int node = 0; node < numnode; node++)
-          if(node != mynode && !recvcomplete[node]) {
+        for(int group = 0; group < numgroup; group++)
+          if(group != mygroup && !recvcomplete[group]) {
             int flag = 0;
-            MPI_Test(recvrequest + node, &flag, MPI_STATUS_IGNORE);
+            MPI_Test(recvrequest + group, &flag, MPI_STATUS_IGNORE);
             if(flag) {
 #ifdef SCI_CUDA
-              cudaMemcpyAsync(recvbuf_d + node * count, recvbuf_h + node * count, count * sizeof(Type), cudaMemcpyHostToDevice, recvstream[node]);
+              cudaMemcpyAsync(recvbuf_d + group * count, recvbuf_h + group * count, count * sizeof(Type), cudaMemcpyHostToDevice, stream[group]);
 #elif defined SCI_HIP
-              hipMemcpyAsync(recvbuf_d + node * count, recvbuf_h + node * count, count * sizeof(Type), hipMemcpyHostToDevice, recvstream[node]);
+              hipMemcpyAsync(recvbuf_d + group * count, recvbuf_h + group * count, count * sizeof(Type), hipMemcpyHostToDevice, stream[group]);
 #endif
-              recvcomplete[node] = true;
+              recvcomplete[group] = true;
             }
             done_recv = false;
           }
@@ -357,19 +281,27 @@ int main(int argc, char *argv[])
 #endif
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("time: %e\n", time);
-      totalTime += time;
-      totalData += 2 * (numnode - 1) * count * sizeof(Type) / 1.e9;
+      if(iter == 0)
+      {
+        if(myid == ROOT)
+          printf("warmup time: %e\n", time);
+      }
+      else
+      {
+        if(myid == ROOT)
+          printf("time: %e\n", time);
+        totalTime += time;
+        totalData += 2 * (numgroup - 1) * count * sizeof(Type) / 1.e9;
+      }
     }
     if(myid == ROOT)
       printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- CPU-Staged MPI\n", totalTime, totalData, totalData / totalTime * groupsize);
 
-    for(int node = 0; node < numnode; node++)
+    for(int group = 0; group < numgroup; group++)
 #ifdef SCI_CUDA
-      cudaStreamDestroy(recvstream[node]);
+      cudaStreamDestroy(stream[group]);
 #elif defined SCI_HIP
-      hipStreamDestroy(recvstream[node]);
+      hipStreamDestroy(stream[group]);
 #endif
   }
 #endif
@@ -379,109 +311,103 @@ int main(int argc, char *argv[])
 #ifdef SCI_CUDA
     if(myid == ROOT)
       printf("ENABLE CUDA IPC\n");
-    Type *recvbuf_p[numnode];
-    cudaStream_t stream_ipc[numnode];
-    for(int node = 0; node < numnode; node++)
-      cudaStreamCreate(stream_ipc + node);
+    // ********************************************* SETUP CUDA IPC ****************************************************************
+    Type *recvbuf_p[numgroup];
     {
-      cudaIpcMemHandle_t peerhandle[numnode];
-      for(int node = 0; node < numnode; node++) {
+      cudaIpcMemHandle_t peerhandle[numgroup];
+      for(int group = 0; group < numgroup; group++) {
         cudaIpcMemHandle_t myhandle;
-        Type *temp = recvbuf_d + node * count;
+        Type *temp = recvbuf_d + group * count;
         cudaIpcGetMemHandle(&myhandle, temp);
-        MPI_Gather(&myhandle, sizeof(cudaIpcMemHandle_t), MPI_BYTE, peerhandle, sizeof(cudaIpcMemHandle_t), MPI_BYTE, node, comm);
+        MPI_Gather(&myhandle, sizeof(cudaIpcMemHandle_t), MPI_BYTE, peerhandle, sizeof(cudaIpcMemHandle_t), MPI_BYTE, group, comm);
       }
-      for(int node = 0; node < numnode; node++)
-        cudaIpcOpenMemHandle((void**)(recvbuf_p + node), peerhandle[node], cudaIpcMemLazyEnablePeerAccess);
+      for(int group = 0; group < numgroup; group++)
+        cudaIpcOpenMemHandle((void**)(recvbuf_p + group), peerhandle[group], cudaIpcMemLazyEnablePeerAccess);
     }
-    {
-      cudaDeviceSynchronize();
-      MPI_Barrier(MPI_COMM_WORLD);
-      double time = MPI_Wtime();
-      for(int node = 0; node < numnode; node++)
-        if(mynode != node)
-          cudaMemcpyAsync(recvbuf_p[node] + mynode * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToDevice, stream_ipc[node]);
-      cudaDeviceSynchronize();
-      MPI_Barrier(MPI_COMM_WORLD);
-      time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("warmup time %e\n", time);
-    }
+    cudaStream_t stream_ipc[numgroup];
+    for(int group = 0; group < numgroup; group++)
+      cudaStreamCreate(stream_ipc + group);
+    // *****************************************************************************************************************************
     double totalData = 0;
     double totalTime = 0;
-    for(int iter = 0; iter < numiter; iter++)
+    for(int iter = 0; iter < numiter + 1; iter++)
     {
       cudaDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
       double time = MPI_Wtime();
-      for(int node = 0; node < numnode; node++)
-        if(mynode != node)
-          cudaMemcpyAsync(recvbuf_p[node] + mynode * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToDevice, stream_ipc[node]);
+      for(int group = 0; group < numgroup; group++)
+        if(mygroup != group)
+          cudaMemcpyAsync(recvbuf_p[group] + mygroup * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToDevice, stream_ipc[group]);
       cudaDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("time %e\n", time);
-      totalTime += time;
-      totalData += 2 * (numnode - 1) * count * sizeof(Type) / 1.e9;
+      if(iter == 0)
+      { 
+        if(myid == ROOT)
+          printf("warmup time %e\n", time);
+      }
+      else
+      {
+        if(myid == ROOT)
+          printf("time %e\n", time);
+        totalTime += time;
+        totalData += 2 * (numgroup - 1) * count * sizeof(Type) / 1.e9;
+      }
     }
     if(myid == ROOT)
       printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- IPC\n", totalTime, totalData, totalData / totalTime * groupsize);
-    for(int node = 0; node < numnode; node++)
-      cudaStreamDestroy(stream_ipc[node]);
+    for(int group = 0; group < numgroup; group++)
+      cudaStreamDestroy(stream_ipc[group]);
 #elif defined SCI_HIP
     if(myid == ROOT)
       printf("ENABLE HIP IPC\n");
-    Type *recvbuf_p[numnode];
-    hipStream_t stream_ipc[numnode];
-    for(int node = 0; node < numnode; node++)
-      hipStreamCreate(stream_ipc + node);
+    // ********************************************** SETUP HIP IPC ****************************************************************
+    Type *recvbuf_p[numgroup];
     {
-      hipIpcMemHandle_t peerhandle[numnode];
-      for(int node = 0; node < numnode; node++) {
+      hipIpcMemHandle_t peerhandle[numgroup];
+      for(int group = 0; group < numgroup; group++) {
         hipIpcMemHandle_t myhandle;
-        Type *temp = recvbuf_d + node * count;
+        Type *temp = recvbuf_d + group * count;
         hipIpcGetMemHandle(&myhandle, temp);
-        MPI_Gather(&myhandle, sizeof(hipIpcMemHandle_t), MPI_BYTE, peerhandle, sizeof(hipIpcMemHandle_t), MPI_BYTE, node, comm);
+        MPI_Gather(&myhandle, sizeof(hipIpcMemHandle_t), MPI_BYTE, peerhandle, sizeof(hipIpcMemHandle_t), MPI_BYTE, group, comm);
       }
-      for(int node = 0; node < numnode; node++)
-        hipIpcOpenMemHandle((void**)(recvbuf_p + node), peerhandle[node], hipIpcMemLazyEnablePeerAccess);
+      for(int group = 0; group < numgroup; group++)
+        hipIpcOpenMemHandle((void**)(recvbuf_p + group), peerhandle[group], hipIpcMemLazyEnablePeerAccess);
     }
-    {
-      hipDeviceSynchronize();
-      MPI_Barrier(MPI_COMM_WORLD);
-      double time = MPI_Wtime();
-      for(int node = 0; node < numnode; node++)
-        if(mynode != node)
-          hipMemcpyAsync(recvbuf_p[node] + mynode * count, sendbuf_d, count * sizeof(Type), hipMemcpyDeviceToDevice, stream_ipc[node]);
-      hipDeviceSynchronize();
-      MPI_Barrier(MPI_COMM_WORLD);
-      time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("warmup time %e\n", time);
-    }
+    hipStream_t stream_ipc[numgroup];
+    for(int group = 0; group < numgroup; group++)
+      hipStreamCreate(stream_ipc + group);
+    // *****************************************************************************************************************************
     double totalData = 0;
     double totalTime = 0;
-    for(int iter = 0; iter < numiter; iter++)
+    for(int iter = 0; iter < numiter + 1; iter++)
     {
       hipDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
       double time = MPI_Wtime();
-      for(int node = 0; node < numnode; node++)
-        if(mynode != node)
-          hipMemcpyAsync(recvbuf_p[node] + mynode * count, sendbuf_d, count * sizeof(Type), hipMemcpyDeviceToDevice, stream_ipc[node]);
+      for(int group = 0; group < numgroup; group++)
+        if(mygroup != group)
+          hipMemcpyAsync(recvbuf_p[group] + mygroup * count, sendbuf_d, count * sizeof(Type), hipMemcpyDeviceToDevice, stream_ipc[group]);
       hipDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("time %e\n", time);
-      totalTime += time;
-      totalData += 2 * (numnode - 1) * count * sizeof(Type) / 1.e9;
+      if(iter == 0)
+      {
+        if(myid == ROOT)
+          printf("warmup time %e\n", time);
+      }
+      else
+      {
+        if(myid == ROOT)
+          printf("time %e\n", time);
+        totalTime += time;
+        totalData += 2 * (numgroup - 1) * count * sizeof(Type) / 1.e9;
+      }
     }
     if(myid == ROOT)
       printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- IPC\n", totalTime, totalData, totalData / totalTime * groupsize);
-    for(int node = 0; node < numnode; node++)
-      hipStreamDestroy(stream_ipc[node]);
+    for(int group = 0; group < numgroup; group++)
+      hipStreamDestroy(stream_ipc[group]);
 #endif
   }
 #endif
@@ -490,42 +416,24 @@ int main(int argc, char *argv[])
   {
     if(myid == ROOT)
       printf("ENABLE NCCL\n");
+    // ************************************************* SETUP NCCL ****************************************************************
     ncclComm_t comm_nccl;
     ncclUniqueId id;
     if(myid / groupsize == 0)
       ncclGetUniqueId(&id);
     MPI_Bcast(&id, sizeof(id), MPI_BYTE, 0, comm);
-    ncclCommInitRank(&comm_nccl, numnode, id, myid / groupsize);
-    {
-      MPI_Barrier(MPI_COMM_WORLD);
-      double time = MPI_Wtime();
-      ncclGroupStart();
-      for(int node = 0; node < numnode; node++)
-        if(myid / groupsize != node) {
-            ncclSend(sendbuf_d,                count * sizeof(Type), ncclInt8, node, comm_nccl, 0);
-            ncclRecv(recvbuf_d + node * count, count * sizeof(Type), ncclInt8, node, comm_nccl, 0);
-        }
-      ncclGroupEnd();
-#ifdef SCI_CUDA
-      cudaDeviceSynchronize();
-#elif defined SCI_HIP
-      hipDeviceSynchronize();
-#endif
-      MPI_Barrier(MPI_COMM_WORLD);
-      time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("warmup time %e\n", time);
-    }
+    ncclCommInitRank(&comm_nccl, numgroup, id, myid / groupsize);
+    // *****************************************************************************************************************************
     double totalTime = 0;
     double totalData = 0;
-    for(int iter = 0; iter < numiter; iter++) {
+    for(int iter = 0; iter < numiter + 1; iter++) {
       MPI_Barrier(MPI_COMM_WORLD);
       double time = MPI_Wtime();
       ncclGroupStart();
-      for(int node = 0; node < numnode; node++)
-        if(myid / groupsize != node) {
-            ncclSend(sendbuf_d,                count * sizeof(Type), ncclInt8, node, comm_nccl, 0);
-            ncclRecv(recvbuf_d + node * count, count * sizeof(Type), ncclInt8, node, comm_nccl, 0);
+      for(int group = 0; group < numgroup; group++)
+        if(myid / groupsize != group) {
+            ncclSend(sendbuf_d,                count * sizeof(Type), ncclInt8, group, comm_nccl, 0);
+            ncclRecv(recvbuf_d + group * count, count * sizeof(Type), ncclInt8, group, comm_nccl, 0);
         }
       ncclGroupEnd();
 #ifdef SCI_CUDA
@@ -535,10 +443,18 @@ int main(int argc, char *argv[])
 #endif
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(myid == ROOT)
-        printf("time %e\n", time);
-      totalTime += time;
-      totalData += 2 * (numnode - 1) * count * sizeof(Type) / 1.e9;
+      if(iter == 0)
+      {
+        if(myid == ROOT)
+          printf("warmup time %e\n", time);
+      }
+      else
+      {
+        if(myid == ROOT)
+          printf("time %e\n", time);
+        totalTime += time;
+        totalData += 2 * (numgroup - 1) * count * sizeof(Type) / 1.e9;
+      }
     }
     if(myid == ROOT)
       printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- NCCL\n", totalTime, totalData, totalData / totalTime * groupsize);
