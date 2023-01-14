@@ -67,8 +67,6 @@ Crusher is a testbed for Frontier&mdash;the first official exascale system. They
 <details><summary>Perlmutter Results</summary>
 <p>
 
-Perlmutter Results
-  
 </p>
 </details>
 
