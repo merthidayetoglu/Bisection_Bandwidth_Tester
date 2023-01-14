@@ -96,7 +96,7 @@ The results below are taken within one node with the default MPI because Cray MP
 
 ![Spock Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/spock_within_nodes.png)
 
-To see the node architecture of Spock: [Spock User Guide](https://docs.olcf.ornl.gov/systems/spock_quick_start_guide.html)
+![Spock User Guide](https://docs.olcf.ornl.gov/systems/spock_quick_start_guide.html)
 
 <p>
 
