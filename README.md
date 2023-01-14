@@ -32,7 +32,7 @@ Running on each system is like driving a different sports car, which has differe
 <details><summary>Summit Results (Cont'd)</summary>
 <p>
 
-Summit has IBM Spectrum MPI, which uses a lower-level API called parallel active message interfece (PAMI). By default, PAMI variables are configured to have a lower latency [as reported here](https://docs.olcf.ornl.gov/systems/summit_user_guide.html#spectrum-mpi-tunings-needed-for-maximum-bandwidth). Thanks [Chris Zimmer](https://www.olcf.ornl.gov/directory/staff-member/christopher-zimmer/) for pointing it out! To obtain full theoretical bandwidth, we set up the PAMI variables as:
+Summit has [IBM Spectrum MPI](https://www.ibm.com/docs/en/SSZTET_EOS/eos/guide_101.pdf), which uses a lower-level transport layer called parallel active message interfece (PAMI). By default, PAMI variables are configured to have a lower latency [as reported here](https://docs.olcf.ornl.gov/systems/summit_user_guide.html#spectrum-mpi-tunings-needed-for-maximum-bandwidth). Thanks [Chris Zimmer](https://www.olcf.ornl.gov/directory/staff-member/christopher-zimmer/) for pointing it out! To obtain full theoretical bandwidth, we set up the PAMI variables as:
 ```bash
 export PAMI_ENABLE_STRIPING=1
 export PAMI_IBV_ADAPTER_AFFINITY=1
