@@ -92,7 +92,11 @@ Spock is an experimental system at OLC that is composed of multi-GPU nodes with 
 
 ![Spock Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/spock_measurement.png)
 
-[Spock User Guide](https://docs.olcf.ornl.gov/systems/spock_quick_start_guide.html)
+The results below are taken within one node.
+
+![Spock Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/spock_within_nodes.png)
+
+To see the node architecture of Spock: [Spock User Guide](https://docs.olcf.ornl.gov/systems/spock_quick_start_guide.html)
 
 <p>
 
