@@ -58,7 +58,9 @@ NCCL performs irrespective of the PAMI configuration, because it uses UCX API ac
 
 Crusher is a testbed for Frontier&mdash;the first official exascale system. They have the same node architecture and software toolchain. It has Cray MPICH MPI implementation by default.
   
-![Crusher Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/crusher_measurement.png)
+![Crusher Across Nodes](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/crusher_across_nodes.png)
+
+![Crusher Within Nodes](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/crusher_within_nodes.png)
   
 [Crusher User Guide](https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html)
   
