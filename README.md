@@ -106,6 +106,10 @@ The results below are taken within one node with the default MPI because Cray MP
 <details><summary>ThetaGPU Results</summary>
 <p>
 
+![ThetaGPU Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/thetaGPU_within_nodes.png)
+
+
+[ThetaGPU User Guide](https://maps.app.goo.gl/GLmdk82YJF3EWeiJ9)
 
 </p>
 </details>
