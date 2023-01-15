@@ -106,6 +106,8 @@ The results below are taken within one node with the default MPI because Cray MP
 <details><summary>ThetaGPU Results</summary>
 <p>
 
+ThetaGPU is a DGX-A100 System with eight GPUs per node. The GPUs each GPU is connected to six NVSwitches via NVLinks. Since each link has 100 GB/s bidirectional bandwidth, each GPUs has a peak bandwidth of 600 GB/s. The figure below shows the bandwidth measurements with various configuration within the node.
+
 ![ThetaGPU Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/thetaGPU_within_nodes.png)
 
 
