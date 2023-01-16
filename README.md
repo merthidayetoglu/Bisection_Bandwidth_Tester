@@ -114,9 +114,7 @@ ThetaGPU is a DGX-A100 System with eight GPUs per node. The GPUs each GPU is con
 ```math
 \beta_{\textrm{group}}^{-1} = g\times600\textrm{ GB/s}
 ```
-where g is the number of GPUs in each group.
-  
-The figure below shows the bandwidth measurements with various configuration within the node.
+where g is the number of GPUs in each group. The figure below shows the bandwidth measurements with various configuration within node.
 
 ![ThetaGPU Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/thetaGPU_within_nodes.png)
 
