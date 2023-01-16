@@ -47,15 +47,12 @@ Results with default configuration is shown below (not to be confused with the f
 ![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/summit_latency.png)
 
 NCCL performs irrespective of the PAMI configuration, because it uses UCX API across nodes. CPU-Staged MPI breaks down with large message sizes due to a known problem.
-
-```math
-test
-```
   
 [Summit User Guide](https://docs.olcf.ornl.gov/systems/summit_user_guide.html)
   
 </p>
 </details>
+
 
 <details><summary>Crusher Results</summary>
 <p>
@@ -112,7 +109,14 @@ The results below are taken within one node with the default MPI because Cray MP
 <details><summary>ThetaGPU Results</summary>
 <p>
 
-ThetaGPU is a DGX-A100 System with eight GPUs per node. The GPUs each GPU is connected to six NVSwitches via NVLinks, where each link has 100 GB/s bidirectional bandwidth. As a result, we can model the bisection bandwidth within a fully-connected topology, where each GPUs has a peak bandwidth of 600 GB/s. The figure below shows the bandwidth measurements with various configuration within the node.
+ThetaGPU is a DGX-A100 System with eight GPUs per node. The GPUs each GPU is connected to six NVSwitches via NVLinks, where each link has 100 GB/s bidirectional bandwidth. Considering the physical communication architecture, we can model the bisection bandwidth within a fully-connected topology, where each GPUs has a peak bandwidth of 600 GB/s. As a result, the bisection bandwidth of a group can be written as:
+
+  ```math
+  \beta_{g}^{-1} = 600 g
+  ```
+  in GB/s.
+  
+  The figure below shows the bandwidth measurements with various configuration within the node.
 
 ![ThetaGPU Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/thetaGPU_within_nodes.png)
 
