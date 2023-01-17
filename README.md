@@ -42,7 +42,7 @@ export PAMI_IBV_DEVICE_NAME="mlx5_0:1,mlx5_3:1"
 export PAMI_IBV_DEVICE_NAME_1="mlx5_3:1,mlx5_0:1"
 ```
 
-Results with default configuration is shown below (not to be confused with the full-bandwidth configuration that is shown above).
+Results with default configuration is shown below (not to be confused with the full-bandwidth configuration that is shown above). We include the equation for calculating the theoretical bandwidth of the CPU-Staged mode.
 
 ![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/summit_latency.png)
 
