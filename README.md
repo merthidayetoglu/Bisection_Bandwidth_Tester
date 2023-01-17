@@ -46,7 +46,7 @@ Results with default configuration is shown below (not to be confused with the f
 
 ![Summit Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/summit_latency.png)
 
-NCCL performs irrespective of the PAMI configuration, because it uses UCX API across nodes. CPU-Staged MPI breaks down with large message sizes due to a known problem.
+NCCL performs irrespective of the PAMI configuration, because it uses UCX API across nodes. CUDA-Aware MPI breaks down with large message sizes due to a known problem.
   
 [Summit User Guide](https://docs.olcf.ornl.gov/systems/summit_user_guide.html)
   
