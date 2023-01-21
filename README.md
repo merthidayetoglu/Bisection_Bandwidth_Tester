@@ -72,6 +72,9 @@ Crusher is a testbed for Frontier&mdash;the first official exascale system. They
 <details><summary>Perlmutter Results</summary>
 <p>
 
+
+![Perlmutter Within Nodes](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/perlmutter_within_nodes.png)
+
 </p>
 </details>
 
