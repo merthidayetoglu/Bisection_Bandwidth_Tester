@@ -129,4 +129,82 @@ where g is the number of GPUs in each group. The figure below shows the bandwidt
 
 For reproducibility, we provide the preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder.
 
+<table>
+<thead>
+  <tr>
+    <th colspan="6">Peak Bandwidth Across Nodes in GB/s</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td></td>
+    <td colspan="3">MPI</td>
+    <td rowspan="2">NCCL</td>
+    <td rowspan="2">Ideal</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td>CPU-Only</td>
+    <td>GPU-Aware</td>
+    <td>CPU-Staged</td>
+  </tr>
+  <tr>
+    <td>Spock (OFI)</td>
+    <td>24.34</td>
+    <td>18.11</td>
+    <td>20.06</td>
+    <td>13.60</td>
+    <td>25</td>
+  </tr>
+  <tr>
+    <td>Spock (UCX)</td>
+    <td>21.22</td>
+    <td>20.48</td>
+    <td>19.75</td>
+    <td>13.19</td>
+    <td>25</td>
+  </tr>
+  <tr>
+    <td>Delta</td>
+    <td>24.11</td>
+    <td>20.53</td>
+    <td></td>
+    <td>23.73</td>
+    <td>25</td>
+  </tr>
+  <tr>
+    <td>Summit</td>
+    <td>44.50</td>
+    <td>38.91</td>
+    <td>39.87</td>
+    <td>30.92</td>
+    <td>50</td>
+  </tr>
+  <tr>
+    <td>Perlmutter</td>
+    <td>84.52</td>
+    <td>66.22</td>
+    <td>52.45</td>
+    <td></td>
+    <td>200</td>
+  </tr>
+  <tr>
+    <td>Crusher</td>
+    <td>59.49</td>
+    <td>115.89</td>
+    <td>58.75</td>
+    <td>4.96</td>
+    <td>200</td>
+  </tr>
+  <tr>
+    <td>ThetaGPU</td>
+    <td>32.94</td>
+    <td>11.91</td>
+    <td>26.28</td>
+    <td>277.45</td>
+    <td>400</td>
+  </tr>
+</tbody>
+</table>
+
 Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this tool for benchmarking GASNet would be great!
