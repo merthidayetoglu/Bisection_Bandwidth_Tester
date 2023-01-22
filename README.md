@@ -208,4 +208,74 @@ The table below reports the measured peak bandwidth in GB/s and its utilization 
 </tbody>
 </table>
 
+<table>
+<thead>
+  <tr>
+    <th colspan="5">Bandwidth Utilization Across Nodes in us</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td></td>
+    <td colspan="3">MPI</td>
+    <td rowspan="2">NCCL</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td>CPU-Only</td>
+    <td>GPU-Aware</td>
+    <td>CPU-Staged</td>
+  </tr>
+  <tr>
+    <td>Spock (OFI)</td>
+    <td>97.37%</td>
+    <td>72.42%</td>
+    <td>80.23%</td>
+    <td>54.39%</td>
+  </tr>
+  <tr>
+    <td>Spock (UCX)</td>
+    <td>84.90%</td>
+    <td>81.92%</td>
+    <td>79.00%</td>
+    <td>52.74%</td>
+  </tr>
+  <tr>
+    <td>Delta</td>
+    <td>96.45%</td>
+    <td>82.11%</td>
+    <td></td>
+    <td>94.93%</td>
+  </tr>
+  <tr>
+    <td>Summit</td>
+    <td>89.00%</td>
+    <td>77.82%</td>
+    <td>79.73%</td>
+    <td>61.83%</td>
+  </tr>
+  <tr>
+    <td>Perlmutter</td>
+    <td>42.26%</td>
+    <td>33.11%</td>
+    <td>26.23%</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Crusher</td>
+    <td>29.75%</td>
+    <td>57.95%</td>
+    <td>29.38%</td>
+    <td>2.48%</td>
+  </tr>
+  <tr>
+    <td>ThetaGPU</td>
+    <td>8.23%</td>
+    <td>2.98%</td>
+    <td>6.57%</td>
+    <td>69.36%</td>
+  </tr>
+</tbody>
+</table>
+
 Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this tool for benchmarking GASNet would be great!
