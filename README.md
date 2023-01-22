@@ -129,6 +129,7 @@ where g is the number of GPUs in each group. The figure below shows the bandwidt
 
 For reproducibility, we provide the preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder.
 
+The table below reports the measured peak bandwidth in GB/s and its utilization of the theoretical model.
 <table>
 <thead>
   <tr>
