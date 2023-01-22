@@ -208,6 +208,9 @@ The table below reports the measured peak bandwidth in GB/s and its utilization 
 </tbody>
 </table>
 
+![Bandwidth Utilization](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/bandwidth_utilization.png)
+
+
 <table>
 <thead>
   <tr>
