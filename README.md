@@ -142,22 +142,19 @@ The table below reports the measured peak bandwidth in GB/s and modeled latency 
   <tr>
     <td></td>
     <td colspan="3">MPI</td>
-    <td>NCCL</td>
-    <td>Ideal</td>
+    <td rowspan="2">NCCL</td>
+    <td rowspan="2">Ideal</td>
     <td colspan="3">MPI</td>
-    <td>NCCL</td>
+    <td rowspan="2">NCCL</td>
   </tr>
   <tr>
     <td></td>
     <td>CPU-Only</td>
     <td>GPU-Aware</td>
     <td>CPU-Staged</td>
-    <td></td>
-    <td></td>
     <td>CPU-Only</td>
     <td>GPU-Aware</td>
     <td>CPU-Staged</td>
-    <td></td>
   </tr>
   <tr>
     <td>Spock-OFI</td>
