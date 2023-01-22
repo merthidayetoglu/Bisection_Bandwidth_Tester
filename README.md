@@ -210,6 +210,122 @@ The table below reports the measured peak bandwidth in GB/s and its utilization 
 
 ![Bandwidth Utilization](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/bandwidth_utilization.png)
 
+<table>
+<thead>
+  <tr>
+    <th></th>
+    <th colspan="5">Bandwidth Utilization Across Nodes (GB/s)</th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td></td>
+    <td colspan="3">MPI</td>
+    <td rowspan="2">NCCL<br>(UCX)</td>
+    <td rowspan="2">Ideal</td>
+    <td colspan="3">GPU-Aware MPI</td>
+    <td rowspan="2">NCCL<br>(UCX)</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td>CPU-Only</td>
+    <td>GPU-Aware</td>
+    <td>CPU-Staged</td>
+    <td>14.48</td>
+    <td>6.54</td>
+    <td>308.47</td>
+  </tr>
+  <tr>
+    <td>Spock (OFI)</td>
+    <td>24.34</td>
+    <td>18.11</td>
+    <td>20.06</td>
+    <td>13.60</td>
+    <td>1.54</td>
+    <td>1.60</td>
+    <td>6.64</td>
+    <td>318.10</td>
+    <td>308.47</td>
+  </tr>
+  <tr>
+    <td>Spock (UCX)</td>
+    <td>21.22</td>
+    <td>20.48</td>
+    <td>19.75</td>
+    <td>13.19</td>
+    <td>1.36</td>
+    <td>102.16</td>
+    <td>0.00</td>
+    <td>1.38</td>
+    <td>318.10</td>
+  </tr>
+  <tr>
+    <td>Delta (UCX)</td>
+    <td>24.11</td>
+    <td>20.53</td>
+    <td></td>
+    <td>23.73</td>
+    <td>1.38</td>
+    <td>0.74</td>
+    <td>0.84</td>
+    <td>1.64</td>
+    <td>1.38</td>
+  </tr>
+  <tr>
+    <td>Summit (PAMI)</td>
+    <td>44.50</td>
+    <td>38.91</td>
+    <td>39.87</td>
+    <td>30.92</td>
+    <td>0.78</td>
+    <td>0.99</td>
+    <td>1.25</td>
+    <td>0.00</td>
+    <td>1.64</td>
+  </tr>
+  <tr>
+    <td>Perlmutter (OFI)</td>
+    <td>84.52</td>
+    <td>66.22</td>
+    <td>52.45</td>
+    <td>0.00</td>
+    <td>0.28</td>
+    <td>0.57</td>
+    <td>2.23</td>
+    <td>211.54</td>
+    <td>0.00</td>
+  </tr>
+  <tr>
+    <td>Crusher (OFI)</td>
+    <td>59.49</td>
+    <td>115.89</td>
+    <td>58.75</td>
+    <td>4.96</td>
+    <td>0.99</td>
+    <td>2.75</td>
+    <td>1.25</td>
+    <td>3.78</td>
+    <td>211.54</td>
+  </tr>
+  <tr>
+    <td>ThetaGPU (UCX)</td>
+    <td>32.94</td>
+    <td>11.91</td>
+    <td>26.28</td>
+    <td>277.45</td>
+    <td>400.00</td>
+    <td>0.99</td>
+    <td>2.75</td>
+    <td>1.25</td>
+    <td>3.78</td>
+  </tr>
+</tbody>
+</table>
+
 
 <table>
 <thead>
