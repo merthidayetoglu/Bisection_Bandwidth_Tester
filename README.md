@@ -184,12 +184,12 @@ The table below reports the measured peak bandwidth in GB/s and modeled latency 
     <td>Delta</td>
     <td>24.11</td>
     <td>20.53</td>
-    <td></td>
+    <td>    </td>
     <td>23.73</td>
     <td>25</td>
     <td>1.36</td>
     <td>102.16</td>
-    <td>0.00</td>
+    <td>    </td>
     <td>1.38</td>
   </tr>
   <tr>
@@ -209,12 +209,12 @@ The table below reports the measured peak bandwidth in GB/s and modeled latency 
     <td>84.52</td>
     <td>66.22</td>
     <td>52.45</td>
-    <td>0.00</td>
+    <td>    </td>
     <td>200</td>
     <td>0.78</td>
     <td>0.99</td>
     <td>1.25</td>
-    <td>0.00</td>
+    <td>    </td>
   </tr>
   <tr>
     <td>Crusher</td>
