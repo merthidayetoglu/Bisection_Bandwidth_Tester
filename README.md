@@ -134,7 +134,7 @@ As a summary of our measurements across nodes, the table below reports the measu
 <thead>
   <tr>
     <th></th>
-    <th colspan="5">Bisection Bandwidth Across Nodes (GB)</th>
+    <th colspan="5">Bisection Bandwidth Across Nodes (GB/s)</th>
     <th colspan="4">Combined Latency Across Nodes (us)</th>
   </tr>
 </thead>
