@@ -129,7 +129,7 @@ where g is the number of GPUs in each group. The figure below shows the bandwidt
 
 For reproducibility, we provide the preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder.
 
-The table below reports the measured peak bandwidth in GB/s and modeled latency of communication across nodes.
+As a summary of our measurements across nodes, the table below reports the measured peak bandwidth in GB/s and the calculated latency of communication. The bandwidth numbers represents the maximum attained bandwidth within package size interval of 4 Bytes to 1 GB.
 <table>
 <thead>
   <tr>
