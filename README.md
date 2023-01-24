@@ -31,7 +31,7 @@ We use the default MPI implementation in the system. You can find more details i
 
 Running on each system is like driving a different sports car, which has different handling and steering behaviour. This benchmarking tool helps understanding of the system characteristics. Our evaluation of various systems can be found below.
 
-<details><summary>Summit Results (Cont'd)</summary>
+<details><summary>Summit (IBM AC922) Results (Cont'd)</summary>
 <p>
 
 Summit has [IBM Spectrum MPI](https://www.ibm.com/docs/en/SSZTET_EOS/eos/guide_101.pdf), which uses a lower-level transport layer called parallel active message interfece (PAMI). By default, PAMI variables are configured to have a lower latency [as reported here](https://docs.olcf.ornl.gov/systems/summit_user_guide.html#spectrum-mpi-tunings-needed-for-maximum-bandwidth). Thanks [Chris Zimmer](https://www.olcf.ornl.gov/directory/staff-member/christopher-zimmer/) for pointing it out! To obtain full theoretical bandwidth, we set up the PAMI variables as:
@@ -54,7 +54,7 @@ NCCL performs irrespective of the PAMI configuration, because it uses UCX API ac
 </details>
 
 
-<details><summary>Crusher Results</summary>
+<details><summary>Crusher (Cray XE) Results</summary>
 <p>
 
 Crusher is a testbed for Frontier&mdash;the first official exascale system. They have the same node architecture and software toolchain. It has Cray MPICH MPI implementation by default.
@@ -69,7 +69,7 @@ Crusher is a testbed for Frontier&mdash;the first official exascale system. They
 </details>
 
 
-<details><summary>Perlmutter Results</summary>
+<details><summary>Perlmutter (HPE Apollo 9500) Results</summary>
 <p>
 
 
@@ -78,7 +78,7 @@ Crusher is a testbed for Frontier&mdash;the first official exascale system. They
 </p>
 </details>
 
-<details><summary>Delta Results</summary>
+<details><summary>Delta (HPE Apollo 9500) Results</summary>
 <p>
 
 Delta is an NCSA system that is composed of multi-GPU nodes with four Nvidia A100 GPUs each. It has Slingshot 10 and runs OpenMPI+UCX by default.
@@ -91,7 +91,7 @@ Delta is an NCSA system that is composed of multi-GPU nodes with four Nvidia A10
 </details>
 
 
-<details><summary>Spock Results</summary>
+<details><summary>Spock (HPE Apollo 9500) Results</summary>
 <p>
   
 Spock is an experimental system at OLC that is composed of multi-GPU nodes with four AMD MI100 GPUs each. It has Slingshot 10 and runs Cray MPICH+OFI by default. We also tried Cray MPICH+UCX by loading modules `craype-network-ucx` and `cray-mpich-ucx`.
@@ -109,7 +109,7 @@ The results below are taken within one node with the default MPI because Cray MP
 </p>
 </details>
 
-<details><summary>ThetaGPU Results</summary>
+<details><summary>ThetaGPU (Nvidia DGX-A100) Results</summary>
 <p>
 
 ThetaGPU is an Nvidia DGX-A100 System with eight GPUs per node. The GPUs each GPU is connected to six NVSwitches via NVLinks, where each link has 100 GB/s bidirectional bandwidth. Considering the physical communication architecture, we can model the bisection bandwidth within a fully-connected topology, where each GPUs has a peak bandwidth of 600 GB/s. As a result, the bisection bandwidth of a group can be written as:
