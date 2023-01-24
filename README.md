@@ -129,10 +129,11 @@ where g is the number of GPUs in each group. The figure below shows the bandwidt
 
 For reproducibility, we provide the preworked Makefiles and run scripts for various systems, including Summit, Crusher, Spock, Delta, and ThetaGPU in the scripts folder.
 
-As a summary of our measurements across nodes, the table below reports the measured peak bandwidth in GB/s and the calculated latency of communication. The bandwidth numbers represents the maximum attained bandwidth within package size interval of 4 Bytes to 1 GB.
+As a summary of our measurements across nodes, the table below reports the measured peak bandwidth in GB/s. The bandwidth numbers represents the maximum attained bandwidth within package size interval of 4 Bytes to 1 GB. Measurement across nodes are performed with 48 GPUs from each system. As a result, the experiments are carried out on 16 nodes of Spock, Delta, and Perlmutter, 12 nodes of Summit, and 6 nodes of Frontier and ThetaGPU.
 
 ![Bandwidth Utilization](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/bandwidth_across_nodes.png)
 
+For thesting various intra-node communication schemes, we deploy a total of p GPUs and group them with a group size of g. 
 
 ![Bandwidth Within Nodes](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/bandwidth_within_nodes.png)
 
