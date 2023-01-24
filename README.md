@@ -69,7 +69,7 @@ Crusher is a testbed for Frontier&mdash;the first official exascale system. They
 </details>
 
 
-<details><summary>Perlmutter (HPE Apollo 9500) Results</summary>
+<details><summary>Perlmutter (HPE Apollo) Results</summary>
 <p>
 
 
@@ -78,7 +78,7 @@ Crusher is a testbed for Frontier&mdash;the first official exascale system. They
 </p>
 </details>
 
-<details><summary>Delta (HPE Apollo 9500) Results</summary>
+<details><summary>Delta (HPE Apollo) Results</summary>
 <p>
 
 Delta is an NCSA system that is composed of multi-GPU nodes with four Nvidia A100 GPUs each. It has Slingshot 10 and runs OpenMPI+UCX by default.
@@ -91,7 +91,7 @@ Delta is an NCSA system that is composed of multi-GPU nodes with four Nvidia A10
 </details>
 
 
-<details><summary>Spock (HPE Apollo 9500) Results</summary>
+<details><summary>Spock (HPE Apollo) Results</summary>
 <p>
   
 Spock is an experimental system at OLC that is composed of multi-GPU nodes with four AMD MI100 GPUs each. It has Slingshot 10 and runs Cray MPICH+OFI by default. We also tried Cray MPICH+UCX by loading modules `craype-network-ucx` and `cray-mpich-ucx`.
@@ -109,7 +109,7 @@ The results below are taken within one node with the default MPI because Cray MP
 </p>
 </details>
 
-<details><summary>ThetaGPU (Nvidia DGX-A100) Results</summary>
+<details><summary>ThetaGPU (Nvidia DGX) Results</summary>
 <p>
 
 ThetaGPU is an Nvidia DGX-A100 System with eight GPUs per node. The GPUs each GPU is connected to six NVSwitches via NVLinks, where each link has 100 GB/s bidirectional bandwidth. Considering the physical communication architecture, we can model the bisection bandwidth within a fully-connected topology, where each GPUs has a peak bandwidth of 600 GB/s. As a result, the bisection bandwidth of a group can be written as:
