@@ -246,4 +246,7 @@ As a summary of our measurements across nodes, the table below reports the measu
 ![Bandwidth Utilization](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/bandwidth_utilization.png)
 
 
-Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this tool for benchmarking GASNet would be great!
+![Bandwidth Within Nodes](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/bandwidth_within_nodes.png)
+
+
+Please send and email to [merth@stanford.edu](merth@stanford.edu) for any questions or contributions. Especially, extension of this tool with GASNet implementation would be great!
