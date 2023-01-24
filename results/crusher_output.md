@@ -1,3 +1,25 @@
+Request Allocation
+```
+[merth@login2.crusher scripts]$ source submit_crusher.sh 
+Resetting modules to system default. Reseting $MODULEPATH back to system default. All extra directories will be removed from $MODULEPATH.
+salloc: Pending job allocation 253145
+salloc: job 253145 queued and waiting for resources
+salloc: job 253145 has been allocated resources
+salloc: Granted job allocation 253145
+salloc: Waiting for resource configuration
+salloc: Nodes crusher[062-065] are ready for job
+bashrc
+merth@crusher062:~/Bisection_Bandwidth_Tester/scripts>
+```
+Compiling
+```
+merth@crusher062:~/Bisection_Bandwidth_Tester> make
+CC -std=c++14 -fopenmp -I/opt/rocm-5.1.0/include -D__HIP_ROCclr__ -D__HIP_ARCH_GFX90A__=1 -x hip -O3  main.cpp -c -o main.o -craype-verbose
+clang++ -D__HIP_PLATFORM_AMD__ -D__HIP_PLATFORM_HCC__ --offload-arch=gfx90a -D__HIP_ARCH_GFX90A__=1 -dynamic -D__CRAY_X86_TRENTO -D__CRAY_AMD_GFX90A -D__CRAYXT_COMPUTE_LINUX_TARGET --gcc-toolchain=/opt/cray/pe/gcc/10.3.0/snos -isystem /opt/cray/pe/cce/14.0.2/cce-clang/x86_64/lib/clang/14.0.6/include -isystem /opt/cray/pe/cce/14.0.2/cce/x86_64/include/craylibs -std=c++14 -fopenmp -I/opt/rocm-5.1.0/include -D__HIP_ROCclr__ -D__HIP_ARCH_GFX90A__=1 -x hip -O3 main.cpp -c -o main.o -I/opt/cray/pe/libsci/22.06.1.3/CRAY/9.0/x86_64/include -I/opt/cray/pe/mpich/8.1.17/ofi/cray/10.0/include -I/opt/cray/pe/dsmml/0.2.2/dsmml//include -I/opt/cray/pe/pmi/6.1.3/include -I/opt/cray/xpmem/2.4.4-2.3_11.2__gff0e1d9.shasta/include 
+CC -o Alltoall main.o  -fopenmp -L/opt/rocm-5.1.0/lib -lamdhip64 -lrccl
+merth@crusher062:~/Bisection_Bandwidth_Tester> 
+```
+Running
 ```
 merth@crusher062:~/Bisection_Bandwidth_Tester> ./run.sh 
 craype-x86-trento
