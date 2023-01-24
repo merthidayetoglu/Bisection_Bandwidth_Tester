@@ -133,7 +133,7 @@ As a summary of our measurements across nodes, the table below reports the measu
 
 ![Bandwidth Utilization](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/bandwidth_across_nodes.png)
 
-Across nodes, $g$ is the number of GPUs per node, and $p$ is equal to the total number of GPUs. Within nodes, we test various configurations in each system, denoted as $p$, $g$.
+Across nodes, $g$ is the number of GPUs per node, and $p$ is equal to the total number of GPUs. Within nodes, pair of $p$, $g$ tests a different configuration.
 
 ![Bandwidth Within Nodes](https://github.com/merthidayetoglu/OLCF_BW_test/blob/main/results/bandwidth_within_nodes.png)
 
