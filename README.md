@@ -109,7 +109,7 @@ The results below are taken within one node with the default MPI because Cray MP
 </p>
 </details>
 
-<details><summary>ThetaGPU (Nvidia DGX) Results</summary>
+<details><summary>ThetaGPU Results</summary>
 <p>
 
 ThetaGPU is an Nvidia DGX-A100 System with eight GPUs per node. The GPUs each GPU is connected to six NVSwitches via NVLinks, where each link has 100 GB/s bidirectional bandwidth. Considering the physical communication architecture, we can model the bisection bandwidth within a fully-connected topology, where each GPUs has a peak bandwidth of 600 GB/s. As a result, the bisection bandwidth of a group can be written as:
