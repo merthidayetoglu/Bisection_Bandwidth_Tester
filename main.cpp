@@ -26,14 +26,16 @@
 // #include <rccl.h>
 
 // PORTS
-// #define SCI_CUDA
-// #define SCI_HIP
+// #define PORT_CUDA
+// #define PORT_HIP
 
 // CAPABILITIES
- #define MPI
-// #define MPI_Staged
-// #define NCCL
-// #define IPC
+ #define CAP_MPI
+// #define CAP_MPI_Staged
+// #define CAP_NCCL
+// #define CAP_IPC
+
+#include "commbench.h"
 
 // USER DEFINED TYPE
 struct Type
@@ -86,7 +88,7 @@ int main(int argc, char *argv[])
   MPI_Comm comm;
   MPI_Comm_split(MPI_COMM_WORLD, myid % groupsize, mygroup, &comm);
 
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
   if(myid == ROOT)
     printf("CUDA VERSION\n");
   // SET DEVICE
@@ -122,7 +124,7 @@ int main(int argc, char *argv[])
     printf("32-bit Reg. per block: %d\n",deviceProp.regsPerBlock);
     printf("\n");
   }
-#elif defined SCI_HIP
+#elif defined HIP
   if(myid == ROOT)
     printf("HIP VERSION\n");
   //DEVICE MANAGEMENT
