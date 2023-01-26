@@ -22,18 +22,18 @@
 #define ROOT 0
 
 // HEADERS
-// #include <nccl.h>
+ #include <nccl.h>
 // #include <rccl.h>
 
 // PORTS
-// #define PORT_CUDA
+ #define PORT_CUDA
 // #define PORT_HIP
 
 // CAPABILITIES
- #define CAP_MPI
-// #define CAP_MPI_Staged
-// #define CAP_NCCL
-// #define CAP_IPC
+ #define MPI
+ #define MPI_Staged
+// #define NCCL
+// #define IPC
 
 // USER DEFINED TYPE
 struct Type
@@ -58,11 +58,11 @@ int main(int argc, char *argv[])
   size_t count = atoi(argv[1]);
   int numiter = atoi(argv[2]);
   int groupsize = atoi(argv[3]);
-  int subgroupsize = atoi(argv[4]);
   int numgroup = numproc / groupsize;
-  int numsubgroup = groupsize / subgroupsize;
   int mygroup = myid / groupsize;
-  int mysubgroup = (myid - (mygroup * groupsize)) / subgroupsize;
+  int subgroupsize = atoi(argv[4]);
+  int numsubgroup = groupsize / subgroupsize;
+  int mysubgroup = (myid % groupsize) / subgroupsize;
   // PRINT NUMBER OF PROCESSES AND THREADS
   if(myid == ROOT)
   {
@@ -71,28 +71,42 @@ int main(int argc, char *argv[])
     printf("Number of threads per proc: %d\n", numthread);
     printf("Number of iterations %d\n", numiter);
     printf("Number of proc. per group: %d\n", groupsize);
+    printf("Number of proc. per subgroup: %d\n", subgroupsize);
+    printf("Number of subgroups: %d\n", numsubgroup);
     printf("Number of groups: %d\n", numgroup);
-    printf("Number of subgroups per group: %d\n", numsubgroup);
     printf("Bytes per Type %lu\n", sizeof(Type));
     printf("Peer-to-peer count %ld ( %ld Bytes)\n", count, count * sizeof(Type));
-    printf("send buffer: %lu (%.2f GB) recv buffer: %lu (%.2f GB)\n", count, count * sizeof(Type) / 1.e9, count * numgroup, count * numgroup * sizeof(Type) / 1.e9);
+    printf("send buffer: %lu (%.2f GB) recv_group buffer: %lu (%.2f GB) recv_subgroup buffer: %lu (%.2f GB)\n", count, count * sizeof(Type) / 1.e9, count * numgroup, count * numgroup * sizeof(Type) / 1.e9, count * numsubgroup, count * numsubgroup * sizeof(Type) / 1.e9);
     printf("\n");
   }
 
-  printf("myid: %d mygroup %d/%d mysubgroup %d/%d\n", myid, mygroup/numgroup, mysubgroup/numsubgroup);
-
-  return 0;
-
   Type *sendbuf = new Type[count];
-  Type *recvbuf = new Type[count * numgroup];
   Type *sendbuf_d;
   Type *recvbuf_d;
+  Type *recvbuf_d_local;
 
   for(int i = 0; i < count; i++) 
     sendbuf[i].data[0] = myid;
 
+  // PARTITION
   MPI_Comm comm;
+  MPI_Comm subcomm;
   MPI_Comm_split(MPI_COMM_WORLD, myid % groupsize, mygroup, &comm);
+  MPI_Comm comm_temp;
+  MPI_Comm_split(MPI_COMM_WORLD, mygroup, myid % groupsize, &comm_temp);
+  MPI_Comm_split(comm_temp, (myid % groupsize) % subgroupsize, mysubgroup, &subcomm);
+  // TEST MPI
+  /*{
+    int myid_group_test;
+    int myid_subgroup_test;
+    int numproc_group_test;
+    int numproc_subgroup_test = 5;
+    MPI_Comm_rank(comm, &myid_group_test);
+    MPI_Comm_rank(subcomm, &myid_subgroup_test);
+    MPI_Comm_size(comm, &numproc_group_test);
+    MPI_Comm_size(subcomm, &numproc_subgroup_test);
+    printf("myid %d mygroup %d/%d (%d/%d) mysubgroup %d/%d (%d/%d)\n", myid, mygroup, numgroup, myid_group_test, numproc_group_test, mysubgroup, numsubgroup, myid_subgroup_test, numproc_subgroup_test);
+  }*/
 
 #ifdef PORT_CUDA
   if(myid == ROOT)
@@ -105,6 +119,7 @@ int main(int argc, char *argv[])
   // MEMORY MANAGEMENT
   cudaMalloc(&sendbuf_d, count * sizeof(Type));
   cudaMalloc(&recvbuf_d, count * numgroup * sizeof(Type));
+  cudaMalloc(&recvbuf_d_local, count * numsubgroup * sizeof(Type));
   cudaMemcpy(sendbuf_d, sendbuf, count * sizeof(Type), cudaMemcpyHostToDevice);
   // DONE
   // REPORT
@@ -143,6 +158,7 @@ int main(int argc, char *argv[])
   // MEMORY MANAGEMENT
   hipMalloc(&sendbuf_d, count * sizeof(Type));
   hipMalloc(&recvbuf_d, count * numgroup * sizeof(Type));
+  hipMalloc(&recvbuf_d_local, count * numsubgroup * sizeof(Type));
   hipMemcpy(sendbuf_d, sendbuf, count * sizeof(Type), hipMemcpyHostToDevice);
   // DONE
   // REPORT
@@ -153,7 +169,8 @@ int main(int argc, char *argv[])
     printf("CPU VERSION\n");
   // MEMORY MANAGEMENT
   sendbuf_d = new Type[count];
-  recvbuf_d = new Type[count * numgroup];
+  recvbuf_d = new Type[count * numsubgroup];
+  recvbuf_d_global = new Type[count * numgroup];
   memcpy(sendbuf_d, sendbuf, count * sizeof(Type));
   // DONE
 #endif
@@ -180,7 +197,7 @@ int main(int argc, char *argv[])
         if(group != mygroup) {
           MPI_Irecv(recvbuf_d + group * count, count * sizeof(Type), MPI_BYTE, group, MPI_ANY_TAG, comm, recvrequest + recvproc);
           recvproc++;
-          MPI_Isend(sendbuf_d                , count * sizeof(Type), MPI_BYTE, group, 0, comm, sendrequest + sendproc);
+          MPI_Isend(sendbuf_d                       , count * sizeof(Type), MPI_BYTE, group, 0, comm, sendrequest + sendproc);
           sendproc++;
         }
       MPI_Waitall(recvproc, recvrequest, MPI_STATUSES_IGNORE);
@@ -475,16 +492,18 @@ int main(int argc, char *argv[])
 #ifdef PORT_CUDA
   cudaFree(sendbuf_d);
   cudaFree(recvbuf_d);
+  cudaFree(recvbuf_d_local);
 #elif defined PORT_HIP
   hipFree(sendbuf_d);
   hipFree(recvbuf_d);
+  hipFree(recvbuf_d_local);
 #else
-  delete[] sendbuf_d;
+  delete[] sendbuf;
   delete[] recvbuf_d;
+  delete[] recvbuf_d_local;
 #endif
   // RELEASE CPU POINTERS
   delete[] sendbuf;
-  delete[] recvbuf;
 
   // FINALIZE
   MPI_Finalize();
