@@ -30,10 +30,12 @@
 // #define PORT_HIP
 
 // CAPABILITIES
- #define MPI
- #define MPI_Staged
-// #define NCCL
-// #define IPC
+ #define CAP_MPI
+ #define CAP_MPI_staged
+// #define CAP_NCCL
+// #define CAP_IPC
+
+#include "commbench.h"
 
 // USER DEFINED TYPE
 struct Type
@@ -51,16 +53,34 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   MPI_Comm_size(MPI_COMM_WORLD, &numproc);
-  int numthread;
-  #pragma omp parallel
-  if(omp_get_thread_num() == 0)
-    numthread = omp_get_num_threads();
+
   size_t count = atoi(argv[1]);
   int numiter = atoi(argv[2]);
   int groupsize = atoi(argv[3]);
+  int subgroupsize = atoi(argv[4]);
+  double ratio = atof(argv[5]);
+
+
+  {
+    using namespace CommBench;
+
+    size_t buffsize;
+    Bench<Type> bench(count, groupsize, subgroupsize, ratio, MPI_COMM_WORLD, buffsize);
+
+    if(myid == ROOT)
+      printf("buffsize: %lu bytes\n", buffsize);
+
+    Type *commbuf = new Type[buffsize];
+
+    bench.init(commbuf, MPI_staged, MPI);
+  }
+
+
+  return 0;
+
+
   int numgroup = numproc / groupsize;
   int mygroup = myid / groupsize;
-  int subgroupsize = atoi(argv[4]);
   int numsubgroup = groupsize / subgroupsize;
   int mysubgroup = (myid % groupsize) / subgroupsize;
   // PRINT NUMBER OF PROCESSES AND THREADS
@@ -68,7 +88,6 @@ int main(int argc, char *argv[])
   {
     printf("\n");
     printf("Number of processes: %d\n", numproc);
-    printf("Number of threads per proc: %d\n", numthread);
     printf("Number of iterations %d\n", numiter);
     printf("Number of proc. per group: %d\n", groupsize);
     printf("Number of proc. per subgroup: %d\n", subgroupsize);
@@ -175,7 +194,7 @@ int main(int argc, char *argv[])
   // DONE
 #endif
 
-#ifdef MPI
+#ifdef CAP_MPI
   {
     if(myid == ROOT)
       printf("ENABLE GPU-Aware MPI\n");
@@ -186,6 +205,7 @@ int main(int argc, char *argv[])
 #if !defined PORT_CUDA && !defined PORT_HIP
       memset(sendbuf_d, 0, count * sizeof(Type));
       memset(recvbuf_d, 0, numgroup * count * sizeof(Type));
+      memset(recvbuf_d_local, 0, numsubgroup * count * sizeof(Type));
 #endif
       MPI_Request sendrequest[numgroup];
       MPI_Request recvrequest[numgroup];
@@ -197,7 +217,7 @@ int main(int argc, char *argv[])
         if(group != mygroup) {
           MPI_Irecv(recvbuf_d + group * count, count * sizeof(Type), MPI_BYTE, group, MPI_ANY_TAG, comm, recvrequest + recvproc);
           recvproc++;
-          MPI_Isend(sendbuf_d                       , count * sizeof(Type), MPI_BYTE, group, 0, comm, sendrequest + sendproc);
+          MPI_Isend(sendbuf_d                , count * sizeof(Type), MPI_BYTE, group, 0, comm, sendrequest + sendproc);
           sendproc++;
         }
       MPI_Waitall(recvproc, recvrequest, MPI_STATUSES_IGNORE);
@@ -221,7 +241,7 @@ int main(int argc, char *argv[])
   }
 #endif
 
-#ifdef MPI_Staged
+#ifdef MPI_staged
   { 
     if(myid == ROOT)
       printf("ENABLE CPU-Staged MPI\n");
@@ -331,7 +351,7 @@ int main(int argc, char *argv[])
   }
 #endif
 
-#ifdef IPC
+#ifdef CAP_IPC
   {
 #ifdef PORT_CUDA
     if(myid == ROOT)
@@ -437,7 +457,7 @@ int main(int argc, char *argv[])
   }
 #endif
 
-#ifdef NCCL
+#ifdef CAP_NCCL
   {
     if(myid == ROOT)
       printf("ENABLE NCCL\n");
