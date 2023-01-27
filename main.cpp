@@ -22,16 +22,16 @@
 #define ROOT 0
 
 // HEADERS
- #include <nccl.h>
+// #include <nccl.h>
 // #include <rccl.h>
 
 // PORTS
- #define PORT_CUDA
+// #define PORT_CUDA
 // #define PORT_HIP
 
 // CAPABILITIES
  #define CAP_MPI
- #define CAP_MPI_staged
+// #define CAP_MPI_staged
 // #define CAP_NCCL
 // #define CAP_IPC
 
@@ -64,20 +64,13 @@ int main(int argc, char *argv[])
   {
     using namespace CommBench;
 
-    size_t buffsize;
-    Bench<Type> bench(count, groupsize, subgroupsize, ratio, MPI_COMM_WORLD, buffsize);
+    Bench<Type> bench(groupsize, subgroupsize, MPI_COMM_WORLD);
 
-    if(myid == ROOT)
-      printf("buffsize: %lu bytes\n", buffsize);
+    bench.init(count, MPI_staged, MPI, ratio);
 
-    Type *commbuf = new Type[buffsize];
+    //bench.measure(numiter);
 
-    bench.init(commbuf, MPI_staged, MPI);
   }
-
-
-  return 0;
-
 
   int numgroup = numproc / groupsize;
   int mygroup = myid / groupsize;
@@ -188,8 +181,8 @@ int main(int argc, char *argv[])
     printf("CPU VERSION\n");
   // MEMORY MANAGEMENT
   sendbuf_d = new Type[count];
-  recvbuf_d = new Type[count * numsubgroup];
-  recvbuf_d_global = new Type[count * numgroup];
+  recvbuf_d = new Type[count * numgroup];
+  recvbuf_d_local = new Type[count * numsubgroup];
   memcpy(sendbuf_d, sendbuf, count * sizeof(Type));
   // DONE
 #endif

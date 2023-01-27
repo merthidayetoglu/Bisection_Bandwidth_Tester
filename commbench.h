@@ -21,14 +21,24 @@ namespace CommBench
     MPI_Comm comm_temp;
     MPI_Comm comm_subgroup;
 
-    const size_t count;
-    const double ratio;
+    size_t count;
+    size_t count_local;
 
     public:
+    T *sendbuf_d;
+    T *recvbuf_d;
+    T *recvbuf_d_local;
 
-    void init(T *&commbuf, transport cap_global, transport cap_local);
+    T *sendbuf_h;
+    T *recvbuf_h;
+    T *recvbuf_h_local;
 
-    Bench(const size_t count, const int groupsize, const int subgroupsize, const double ratio, const MPI_Comm &comm_mpi, size_t &buffsize) : count(count), groupsize(groupsize), subgroupsize(subgroupsize), ratio(ratio), comm_mpi(comm_mpi) {
+
+    void init(size_t count, transport cap_global, transport cap_local, double ratio);
+
+    void measure(int numiter);
+
+    Bench(const int groupsize, const int subgroupsize, const MPI_Comm &comm_mpi) : groupsize(groupsize), subgroupsize(subgroupsize), comm_mpi(comm_mpi) {
 
       MPI_Comm_rank(comm_mpi, &myid);
       MPI_Comm_size(comm_mpi, &numproc);
@@ -77,8 +87,6 @@ namespace CommBench
       size_t sendDim = 1;
       size_t recvDim_global = numgroup;
       size_t recvDim_local = numsubgroup;
-      if(myid == ROOT)
-        printf("sendDim %d recvDim_global %d recvDim_local %d\n", sendDim, recvDim_global, recvDim_local);
       size_t sendDim_total = sendDim;
       size_t recvDim_total_global = recvDim_global;
       size_t recvDim_total_local = recvDim_local;
@@ -86,27 +94,146 @@ namespace CommBench
       MPI_Allreduce(MPI_IN_PLACE, &recvDim_total_global, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm_mpi);
       MPI_Allreduce(MPI_IN_PLACE, &recvDim_total_local, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm_mpi);
       if(myid == ROOT) {
-        printf("total sendDim %d total recvDim_global %d total recvDim_local %d\n", sendDim_total, recvDim_total_global, recvDim_total_local);
-        printf("total per GPU %f\n", (sendDim_total + recvDim_total_global + recvDim_total_local) / (double)numproc);
-
+        printf("sendDim %lu (%.2f) recvDim_global %lu (%.2f) recvDim_local %lu (%.2f)\n", sendDim_total, sendDim_total/(double)numproc, recvDim_total_global, recvDim_total_global/(double)numproc, recvDim_total_local, recvDim_total_local/(double)numproc);
         printf("Now initialize bench with comm.init\n");
         printf("\n");
       }
-
-      buffsize = 55;
     }
   };
 
   template<typename T>
-  void Bench<T>::init(T *&commbuf, transport cap_global, transport cap_local) {
+  void Bench<T>::init(size_t count, transport cap_global, transport cap_local, double ratio) {
 
-    
+    count_local = count * ratio;
 
-    if(myid == ROOT) {
-      printf("initialize capabilities\n");
-      
+    if(myid == ROOT)
+      printf("count: %lu ratio: %f count_local: %lu\n", count, ratio, count_local);
+#ifdef PORT_CUDA
+    if(myid == ROOT)
+      printf("CUDA VERSION\n");
+    // SET DEVICE
+    int deviceCount;
+    cudaGetDeviceCount(&deviceCount);
+    int device = myid % deviceCount;
+    cudaSetDevice(device);
+    // MEMORY MANAGEMENT
+    cudaMalloc(&sendbuf_d, count * sizeof(T));
+    cudaMalloc(&recvbuf_d, count * numgroup * sizeof(T));
+    cudaMalloc(&recvbuf_d_local, count_local * numsubgroup * sizeof(T));
+    // DONE
+    // REPORT
+    if(myid == ROOT){
+      system("nvidia-smi");
+      int deviceCount;
+      int device;
+      cudaGetDevice(&device);
+      cudaGetDeviceCount(&deviceCount);
+      printf("Device %d Count: %d\n", device, deviceCount);
+      cudaDeviceProp deviceProp;
+      cudaGetDeviceProperties(&deviceProp,0);
+      printf("Device %d name: %s\n",0,deviceProp.name);
+      printf("Clock Frequency: %f GHz\n",deviceProp.clockRate/1.e9);
+      printf("Computational Capabilities: %d, %d\n",deviceProp.major,deviceProp.minor);
+      printf("Maximum global memory size: %lu\n",deviceProp.totalGlobalMem);
+      printf("Maximum constant memory size: %lu\n",deviceProp.totalConstMem);
+      printf("Maximum shared memory size per block: %lu\n",deviceProp.sharedMemPerBlock);
+      printf("Maximum block dimensions: %dx%dx%d\n",deviceProp.maxThreadsDim[0],deviceProp.maxThreadsDim[1],deviceProp.maxThreadsDim[2]);
+      printf("Maximum grid dimensions: %dx%dx%d\n",deviceProp.maxGridSize[0],deviceProp.maxGridSize[1],deviceProp.maxGridSize[2]);
+      printf("Maximum threads per block: %d\n",deviceProp.maxThreadsPerBlock);
+      printf("Warp size: %d\n",deviceProp.warpSize);
+      printf("32-bit Reg. per block: %d\n",deviceProp.regsPerBlock);
+      printf("\n");
     }
+#elif defined PORT_HIP
+    if(myid == ROOT)
+      printf("HIP VERSION\n");
+    //DEVICE MANAGEMENT
+    int deviceCount;
+    hipGetDeviceCount(&deviceCount);
+    int device = myid % deviceCount;
+    if(myid == ROOT)
+      printf("deviceCount: %d\n", deviceCount);
+    hipSetDevice(device);
+    // MEMORY MANAGEMENT
+    hipMalloc(&sendbuf_d, count * sizeof(T));
+    hipMalloc(&recvbuf_d, count * numgroup * sizeof(T));
+    hipMalloc(&recvbuf_d_local, count_local * numsubgroup * sizeof(T));
+    // DONE
+    // REPORT
+    if(myid == ROOT)
+      system("rocm-smi");
+#else
+    if(myid == ROOT)
+      printf("CPU VERSION\n");
+
+    printf("count %d numgroup %d\n", count, numgroup);
+
+    // MEMORY MANAGEMENT
+    printf("malloc\n");
+    sendbuf_d = new T[count];
+    recvbuf_d = new T[count * numgroup];
+    recvbuf_d_local = new T[count_local * numsubgroup];
+    // DONE
+#endif
+
+  }; // void init
+
+  template <typename T>
+  void Bench<T>::measure(int numiter){
+
+#ifdef CAP_MPI
+    {
+      if(myid == ROOT)
+        printf("ENABLE GPU-Aware MPI\n");
+      double totalTime = 0;
+      double totalData = 0;
+      for(int iter = 0; iter < numiter; iter++)
+      {
+#if !defined PORT_CUDA && !defined PORT_HIP 
+
+        printf("memset\n");
+        #pragma omp parallel for
+        for(int i = 0; i < count; i++)
+          sendbuf_d[i].data[0] = 5;
+        memset(sendbuf_d, 0, count * sizeof(T));
+        memset(recvbuf_d, 0, numgroup * count * sizeof(T));
+        memset(recvbuf_d_local, 0, numsubgroup * count_local * sizeof(T));
+#endif
+        MPI_Request sendrequest[numgroup];
+        MPI_Request recvrequest[numgroup];
+        int sendproc = 0;
+        int recvproc = 0;
+        double time = MPI_Wtime();
+        MPI_Barrier(comm_mpi);
+        for(int group = 0; group < numgroup; group++)
+          if(group != mygroup) {
+            printf("group %d iter %d numiter %d\n", group, iter, numiter);
+            MPI_Irecv(recvbuf_d + group * count, count * sizeof(T), MPI_BYTE, group, MPI_ANY_TAG, comm_group, recvrequest + recvproc);
+            MPI_Isend(sendbuf_d, count * sizeof(T), MPI_BYTE, group, 0, comm_group, sendrequest + sendproc);
+            recvproc++;
+            sendproc++;
+          }
+        MPI_Waitall(recvproc, recvrequest, MPI_STATUSES_IGNORE);
+        MPI_Barrier(comm_mpi);
+        time = MPI_Wtime() - time;
+        if(iter == 0)
+        { 
+          if(myid == ROOT)
+            printf("warmup time: %e\n", time);
+        }
+        else
+        { 
+          if(myid == ROOT)
+            printf("time: %e\n", time);
+          totalTime += time;
+          totalData += 2 * (numgroup - 1) * count * sizeof(T) / 1.e9;
+        }
+      }
+      if(myid == ROOT)
+        printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- GPU-Aware MPI\n", totalTime, totalData, totalData / totalTime * groupsize);
+    }
+#endif
+
   };
 
-
-}
+} // namespace CommBench
