@@ -22,20 +22,40 @@
 #define ROOT 0
 
 // HEADERS
-// #include <nccl.h>
+ #include <nccl.h>
 // #include <rccl.h>
 
 // PORTS
-// #define PORT_CUDA
+ #define PORT_CUDA
 // #define PORT_HIP
 
 // CAPABILITIES
  #define CAP_MPI
-// #define CAP_MPI_staged
-// #define CAP_NCCL
-// #define CAP_IPC
+ #define CAP_MPI_staged
+ #define CAP_NCCL
+ #define CAP_IPC
 
 #include "commbench.h"
+
+#define MEASURE(numiter, comm)                                          \
+      MPI_Barrier(comm);                                                \
+      for(int iter = -1; iter < numiter; iter++) {                      \
+        double time = MPI_Wtime();                                      \
+        alltoall.start();                                               \
+        alltoall.wait();                                                \
+        MPI_Barrier(comm);                                              \
+        time = MPI_Wtime() - time;                                      \
+        if(iter < 0) {                                                  \
+          if(myid == ROOT)                                              \
+            printf("warmup time: %e\n", time);                          \
+        }                                                               \
+        else {                                                          \
+          if(myid == ROOT)                                              \
+            printf("time: %e\n", time);                                 \
+          totalTime += time;                                            \
+          totalData += 2 * (numproc - 1) * count * sizeof(Type) / 1.e9; \
+        }                                                               \
+      }                                                                 \
 
 // USER DEFINED TYPE
 struct Type
@@ -68,9 +88,84 @@ int main(int argc, char *argv[])
 
     bench.init(count, MPI_staged, MPI, ratio);
 
-    //bench.measure(numiter);
+    size_t sendcount[numproc];
+    size_t recvcount[numproc];
+    size_t sendoffset[numproc] = {0};
+    size_t recvoffset[numproc];
+    int block = 0;
+    for (int p = 0; p < numproc; p++) {
+      sendcount[p] = (p != myid ? count : 0);
+      recvcount[p] = (p != myid ? count : 0);
+      if(recvcount[p]) {
+        recvoffset[p] = block * count;
+        block++;
+      }
+    }
+
+    Type *sendbuf;
+    Type *recvbuf;
+#ifdef PORT_CUDA
+    cudaMalloc(&sendbuf, count * sizeof(Type));
+    cudaMalloc(&recvbuf, count * (numproc - 1) * sizeof(Type));
+#elif defined(PORT_HIP)
+    hipMalloc(&sendbuf, count * sizeof(Type));
+    hipMalloc(&recvbuf, count * (numproc - 1) * sizeof(Type));
+#else
+    sendbuf = new Type[count];
+    recvbuf = new Type[count * (numproc - 1)];
+#endif
+
+#ifdef CAP_MPI
+    {
+      Comm<Type> alltoall(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, MPI_COMM_WORLD, MPI);
+
+      double totalTime = 0;
+      double totalData = 0;
+
+      MEASURE(numiter, MPI_COMM_WORLD);
+
+      if(myid == ROOT)
+        printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- GPU-Aware MPI\n", totalTime, totalData, totalData / totalTime);
+    }
+#endif
+
+#ifdef CAP_MPI_staged
+    {
+      Comm<Type> alltoall(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, MPI_COMM_WORLD, MPI_staged);
+    }
+#endif
+
+#ifdef CAP_NCCL
+    {
+      Comm<Type> alltoall(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, MPI_COMM_WORLD, NCCL);
+
+      double totalTime = 0;
+      double totalData = 0;
+
+      MEASURE(numiter, MPI_COMM_WORLD)
+
+      if(myid == ROOT)
+        printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- NCCL\n", totalTime, totalData, totalData / totalTime);
+    }
+#endif
+
+#ifdef CAP_IPC
+    {
+      Comm<Type> alltoall(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, MPI_COMM_WORLD, IPC);
+
+      double totalTime = 0;
+      double totalData = 0;
+
+      MEASURE(numiter, MPI_COMM_WORLD)
+
+      if(myid == ROOT)
+        printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- IPC\n", totalTime, totalData, totalData / totalTime);
+    }
+#endif
 
   }
+
+  return 0;
 
   int numgroup = numproc / groupsize;
   int mygroup = myid / groupsize;
@@ -233,6 +328,7 @@ int main(int argc, char *argv[])
       printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- GPU-Aware MPI\n", totalTime, totalData, totalData / totalTime * groupsize);
   }
 #endif
+    return 0;
 
 #ifdef MPI_staged
   { 
