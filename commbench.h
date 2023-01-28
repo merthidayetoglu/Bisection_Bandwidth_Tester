@@ -9,21 +9,42 @@ namespace CommBench
 
     const transport cap;
     const MPI_Comm &comm;
-#ifdef CAP_MPI
+#ifdef CAP_MPI 
     MPI_Request *sendrequest;
     MPI_Request *recvrequest;
 #endif
 #ifdef CAP_MPI_staged
     T *sendbuf_h;
     T *recvbuf_h;
+    MPI_Request *sendrequest_h;
+    MPI_Request *recvrequest_h;
+    bool *sendcomplete;
+    bool *recvcomplete;
+#ifdef PORT_CUDA
+    cudaStream_t *sendstream;
+    cudaStream_t *recvstream;
+#elif defined PORT_HIP
+    hipStream_t *sendstream;
+    hipStream_t *recvstream;
+#endif
+    size_t *recvoffset_h;
+    size_t *sendoffset_h;
 #endif
 #ifdef CAP_NCCL
     ncclComm_t comm_nccl;
+#ifdef PORT_CUDA
     cudaStream_t stream_nccl;
+#elif defined PORT_HIP
+    hipStream_t stream_nccl;
+#endif
 #endif
 #ifdef CAP_IPC
     T **recvbuf_ipc;
+#ifdef PORT_CUDA
     cudaStream_t *stream_ipc;
+#elif defined PORT_HIP
+    hipStream_t *stream_ipc;
+#endif
     size_t *recvoffset_ipc;
 #endif
 
@@ -40,65 +61,16 @@ namespace CommBench
 
     public:
 
-    void start() {
-      switch(cap) {
-#ifdef CAP_MPI
-        case MPI:
-          for (int send = 0; send < numsend; send++)
-            MPI_Isend(sendbuf + sendoffset[send], sendcount[send] * sizeof(T), MPI_BYTE, sendproc[send], 0, comm, sendrequest + send);
-          for (int recv = 0; recv < numrecv; recv++)
-            MPI_Irecv(recvbuf + recvoffset[recv], recvcount[recv] * sizeof(T), MPI_BYTE, recvproc[recv], 0, comm, recvrequest + recv);
-          break;
-#endif
-#ifdef CAP_NCCL
-        case NCCL:
-          ncclGroupStart();
-          for(int send = 0; send < numsend; send++)
-            ncclSend(sendbuf + sendoffset[send], sendcount[send] * sizeof(T), ncclInt8, sendproc[send], comm_nccl, stream_nccl);
-          for(int recv = 0; recv < numrecv; recv++)
-            ncclRecv(recvbuf + recvoffset[recv], recvcount[recv] * sizeof(T), ncclInt8, recvproc[recv], comm_nccl, stream_nccl);
-          ncclGroupEnd();
-          break;
-#endif
-#ifdef CAP_IPC
-        case IPC:
-          for(int send = 0; send < numsend; send++)
-            cudaMemcpyAsync(sendbuf + sendoffset[send], recvbuf_ipc[send] + recvoffset_ipc[send], sendcount[send] * sizeof(T), cudaMemcpyDeviceToDevice, stream_ipc[send]);
-          break;
-#endif
-        default:
-          printf("Selected capability is not yet implemented for CommBench::init.\n");
-      }
-    }
-    void wait() {
-      switch(cap) {
-#ifdef CAP_MPI
-        case MPI:
-          MPI_Waitall(numsend, sendrequest, MPI_STATUSES_IGNORE);
-          MPI_Waitall(numrecv, recvrequest, MPI_STATUSES_IGNORE);
-          break;
-#endif
-#ifdef CAP_NCCL
-        case NCCL:
-#ifdef PORT_CUDA
-          cudaStreamSynchronize(stream_nccl);
-#elif defined(PORT_HIP)
-          hipStreamSynchronize(stream_nccl);
-#endif
-          break;
-#endif
-#ifdef CAP_IPC
-        case IPC:
-          for(int send = 0; send < numsend; send++)
-            cudaStreamSynchronize(stream_ipc[send]);
-          break;
-#endif
-        default:
-          printf("NOT IMPLEMENTED\n");
-      }
-    }
+    Comm(T* &sendbuf, size_t sendcount[], size_t sendoffset[],
+         T* &recvbuf, size_t recvcount[], size_t recvoffset[],
+         const MPI_Comm &comm, const transport cap);
 
-    Comm(T *&sendbuf, size_t sendcount[], size_t sendoffset[], T *&recvbuf, size_t recvcount[], size_t recvoffset[], const MPI_Comm &comm, const transport cap) : comm(comm), cap(cap), sendbuf(sendbuf), recvbuf(recvbuf) {
+    void start();
+    void wait();
+  };
+
+  template <typename T>
+  Comm<T>::Comm(T *&sendbuf, size_t sendcount[], size_t sendoffset[], T *&recvbuf, size_t recvcount[], size_t recvoffset[], const MPI_Comm &comm, const transport cap) : comm(comm), cap(cap), sendbuf(sendbuf), recvbuf(recvbuf) {
       int myid;
       int numproc;
       MPI_Comm_rank(comm, &myid);
@@ -156,21 +128,45 @@ namespace CommBench
         case MPI_staged:
           if(myid == ROOT)
             printf("SETUP CPU-Staged MPI\n");
+          sendrequest_h = new MPI_Request[numsend];
+          recvrequest_h = new MPI_Request[numrecv];
+          sendoffset_h = new size_t[numsend];
+          recvoffset_h = new size_t[numrecv];
           {
-            size_t sendcount_h = this->sendoffset[numsend-1] + this->sendcount[numsend-1];
-            size_t recvcount_h = this->recvoffset[numrecv-1] + this->recvcount[numrecv-1];
+            size_t sendcount_h = 0;
+            for(int send = 0; send < numsend; send++)
+              sendcount_h += sendcount[send];
+            sendoffset_h[0] = 0;
+            for(int send = 1; send < numsend; send++)
+              sendoffset_h[send] = sendcount[send];
+            size_t recvcount_h;
+            for(int recv = 0; recv < numrecv; recv++)
+              recvcount_h += recvcount[recv];
+            recvoffset_h[0] = 0;
+            for(int recv = 1; recv < numrecv; recv++)
+              recvoffset_h[recv] = recvcount[recv];
 #ifdef PORT_CUDA
             if(myid == ROOT)
               printf("FOR CUDA\n");
+            sendstream = new cudaStream_t[numsend];
+            for(int send = 0; send < numsend; send++)
+              cudaStreamCreate(sendstream + send);
+            recvstream = new cudaStream_t[numrecv];
+            for(int recv = 0; recv < numrecv; recv++)
+              cudaStreamCreate(recvstream + recv);
             cudaMallocHost(&sendbuf_h, sendcount_h * sizeof(T));
             cudaMallocHost(&recvbuf_h, recvcount_h * sizeof(T));
-#elif defined(PORT_HIP)
+#elif defined PORT_HIP
             if(myid == ROOT)
               printf("FOR HIP\n");
-            hipMallocHost(&sendbuf_h, sendcount_h * sizeof(T));
-            hipMallocHost(&recvbuf_h, recvcount_h * sizeof(T));
-#elif
-            printf("Desired port is not yet implemented for CPU-Staged MPI\n");
+            sendstream = new cudaStream_t[numsend];
+            for(int send = 0; send < numsend; send++)
+              hipStreamCreate(sendstream + send);
+            recvstream = new cudaStream_t[numrecv];
+            for(int recv = 0; recv < numrecv; recv++)
+              hipStreamCreate(recvstream + recv);
+            hipHostMalloc(&sendbuf_h, sendcount_h * sizeof(T));
+            hipHostMalloc(&recvbuf_h, recvcount_h * sizeof(T));
 #endif
           }
           break;
@@ -188,12 +184,10 @@ namespace CommBench
           if(myid == ROOT)
             printf("FOR CUDA\n");
           cudaStreamCreate(&stream_nccl);
-#elif defined(PORT_HIP)
+#elif defined PORT_HIP
           if(myid == ROOT)
             printf("FOR HIP\n");
           hipStreamCreate(&stream_nccl);
-#elif
-            printf("Desired port is not yet implemented for NCCL\n");
 #endif
           break;
 #endif
@@ -221,20 +215,166 @@ namespace CommBench
           stream_ipc = new cudaStream_t[numsend];
           for(int send = 0; send < numsend; send++)
             cudaStreamCreate(stream_ipc + send);
-#elif defined(PORT_HIP)
+#elif defined PORT_HIP
           if(myid == ROOT)
             printf("FOR HIP\n");
-#elif
-            printf("Desired port is not yet implemented for IPC\n");
+          {
+            hipIpcMemHandle_t handle_ipc[numproc];
+            hipIpcMemHandle_t myhandle;
+            hipIpcGetMemHandle(&myhandle, recvbuf);
+            MPI_Allgather(&myhandle, sizeof(hipIpcMemHandle_t), MPI_BYTE, handle_ipc, sizeof(hipIpcMemHandle_t), MPI_BYTE, comm);
+            size_t recvoffset_ipc[numproc];
+            MPI_Alltoall(recvoffset, 1, MPI_UNSIGNED_LONG, recvoffset_ipc, 1, MPI_UNSIGNED_LONG, comm);
+            for(int send = 0; send < numsend; send++) {
+              this->recvoffset_ipc[send] = recvoffset_ipc[sendproc[send]];
+              hipIpcOpenMemHandle((void**)(recvbuf_ipc + send), handle_ipc[sendproc[send]], hipIpcMemLazyEnablePeerAccess);
+            }
+          }
+          stream_ipc = new hipStream_t[numsend];
+          for(int send = 0; send < numsend; send++)
+            hipStreamCreate(stream_ipc + send);
 #endif
           break;
 #endif
         default:
           printf("Selected capability is not yet implemented for CommBench::Comm.\n");
       } // switch(cap)
-    } // Comm::Comm
-  // class Comm
-  };
+  } // Comm::Comm
+
+  template <typename T>
+  void Comm<T>::start() {
+    switch(cap) {
+#ifdef CAP_MPI
+      case MPI:
+        for (int send = 0; send < numsend; send++)
+          MPI_Isend(sendbuf + sendoffset[send], sendcount[send] * sizeof(T), MPI_BYTE, sendproc[send], 0, comm, sendrequest + send);         
+        for (int recv = 0; recv < numrecv; recv++)
+          MPI_Irecv(recvbuf + recvoffset[recv], recvcount[recv] * sizeof(T), MPI_BYTE, recvproc[recv], 0, comm, recvrequest + recv);         
+        break;
+#endif
+#ifdef CAP_MPI_staged
+      case MPI_staged:
+        for (int recv = 0; recv < numrecv; recv++)
+          MPI_Irecv(recvbuf_h + recvoffset_h[recv], recvcount[recv] * sizeof(T), MPI_BYTE, recvproc[recv], 0, comm, recvrequest_h + recv);
+        for (int send = 0; send < numsend; send++) {
+#ifdef PORT_CUDA
+          cudaMemcpyAsync(sendbuf_h + sendoffset_h[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T), cudaMemcpyDeviceToHost, sendstream[send]);
+#elif defined PORT_HIP
+          hipMemcpyAsync(sendbuf_h + sendoffset_h[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T), hipMemcpyDeviceToHost, sendstream[send]);
+#endif
+        }
+        // SEND LOOP
+        {
+          bool done_send = false;
+          memset(sendcomplete, 0, numsend);
+          while(!done_send) {
+            done_send = true;
+            for(int send = 0; send < numsend; send++)
+              if(!sendcomplete[send]) {
+#ifdef PORT_CUDA
+                if(cudaStreamQuery(sendstream[send]) == cudaSuccess) {
+#elif defined PORT_HIP
+                if(hipStreamQuery(sendstream[send]) == hipSuccess) {
+#endif
+                  MPI_Isend(sendbuf_h + sendoffset_h[send], sendcount[send] * sizeof(T), MPI_BYTE, sendproc[send], 0, comm, sendrequest_h + send);
+                  sendcomplete[send] = true;
+                }
+                done_send = false;
+              }
+          }
+        }
+        break;
+#endif
+#ifdef CAP_NCCL
+      case NCCL:
+        ncclGroupStart(); 
+        for(int send = 0; send < numsend; send++)
+          ncclSend(sendbuf + sendoffset[send], sendcount[send] * sizeof(T), ncclInt8, sendproc[send], comm_nccl, stream_nccl);
+        for(int recv = 0; recv < numrecv; recv++)
+          ncclRecv(recvbuf + recvoffset[recv], recvcount[recv] * sizeof(T), ncclInt8, recvproc[recv], comm_nccl, stream_nccl);
+        ncclGroupEnd();
+        break;
+#endif
+#ifdef CAP_IPC
+      case IPC: 
+        for(int send = 0; send < numsend; send++)
+#ifdef PORT_CUDA
+          cudaMemcpyAsync(sendbuf + sendoffset[send], recvbuf_ipc[send] + recvoffset_ipc[send], sendcount[send] * sizeof(T), cudaMemcpyDeviceToDevice, stream_ipc[send]);
+#elif PORT_HIP
+          hipMemcpyAsync(sendbuf + sendoffset[send], recvbuf_ipc[send] + recvoffset_ipc[send], sendcount[send] * sizeof(T), hipMemcpyDeviceToDevice, stream_ipc[send]);
+#endif
+        break;
+#endif
+      default:
+        printf("Selected capability is not yet implemented for CommBench::init.\n");
+    }
+  }
+
+
+  template <typename T>
+  void Comm<T>::wait() { 
+    switch(cap) {
+#ifdef CAP_MPI
+      case MPI:
+        MPI_Waitall(numsend, sendrequest, MPI_STATUSES_IGNORE);
+        MPI_Waitall(numrecv, recvrequest, MPI_STATUSES_IGNORE);
+        break;
+#endif
+#ifdef CAP_MPI_staged
+      case MPI_staged:
+        // MEMCPY LOOP
+        {
+          bool done_recv = false;
+          memset(recvcomplete, 0, numrecv);
+          while(!done_recv) {
+            done_recv = true;
+            for(int recv = 0; recv < numrecv; recv++)
+              if(!recvcomplete[recv]) {
+                int flag = 0;
+                MPI_Test(recvrequest_h + recv, &flag, MPI_STATUS_IGNORE);
+                if(flag) {
+#ifdef PORT_CUDA
+                  cudaMemcpyAsync(recvbuf + recvoffset[recv], recvbuf_h + recvoffset_h[recv], recvcount[recv] * sizeof(T), cudaMemcpyHostToDevice, recvstream[recv]);
+#elif defined PORT_HIP
+                  hipMemcpyAsync(recvbuf + recvoffset[recv], recvbuf_h + recvoffset_h[recv], recvcount[recv] * sizeof(T), hipMemcpyHostToDevice, recvstream[recv]);
+#endif
+                  recvcomplete[recv] = true;
+                }
+                done_recv = false;
+              }
+          }
+        }
+        for(int recv = 0; recv < numrecv; recv++)
+#ifdef PORT_CUDA
+          cudaStreamSynchronize(recvstream[recv]);
+#elif defined PORT_HIP
+          hipStreamSynchronize(recvstream[recv]);
+#endif
+      break;
+#endif
+#ifdef CAP_NCCL
+      case NCCL:
+#ifdef PORT_CUDA
+        cudaStreamSynchronize(stream_nccl);
+#elif defined(PORT_HIP)
+        hipStreamSynchronize(stream_nccl);
+#endif
+        break;
+#endif
+#ifdef CAP_IPC
+      case IPC:
+        for(int send = 0; send < numsend; send++)
+#ifdef PORT_CUDA
+          cudaStreamSynchronize(stream_ipc[send]);
+#elif defined(PORT_HIP)
+          hipStreamSynchronize(stream_ipc[send]);
+#endif
+        break;
+#endif
+      default:
+        printf("NOT IMPLEMENTED\n");
+    }
+  }
 
   template <typename T>
   class Bench
