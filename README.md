@@ -119,6 +119,8 @@ ThetaGPU is an Nvidia DGX-A100 System with eight GPUs per node. The GPUs each GP
 ```
 where g is the number of GPUs in each group. The figure below shows the bandwidth measurements with various configuration within the DGX-A100 node.
 
+![ThetaGPU Across Nodes](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/thetaGPU_across_nodes.png)
+
 ![ThetaGPU Measurement](https://github.com/merthidayetoglu/Bisection_Bandwidth_Tester/blob/main/results/thetaGPU_within_nodes.png)
 
 
