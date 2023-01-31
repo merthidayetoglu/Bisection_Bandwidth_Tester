@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
   int numiter = atoi(argv[2]);
   int groupsize = atoi(argv[3]);
   int subgroupsize = atoi(argv[4]);
+  double ratio = atof(argv[5]);
   int numgroup = numproc / groupsize;
   // PRINT NUMBER OF PROCESSES AND THREADS
   if(myid == ROOT)
@@ -75,6 +76,10 @@ int main(int argc, char *argv[])
     printf("Number of threads per proc: %d\n", numthread);
     printf("Number of iterations %d\n", numiter);
     printf("Number of proc. per group: %d\n", groupsize);
+
+    printf("Number of proc. per subgroup: %d\n", subgroupsize);
+    printf("Ratio %f\n", ratio);
+
     printf("Number of groups: %d\n", numgroup);
     printf("Bytes per Type %lu\n", sizeof(Type));
     printf("Peer-to-peer count %ld ( %ld Bytes)\n", count, count * sizeof(Type));
@@ -84,23 +89,29 @@ int main(int argc, char *argv[])
 
   setup_gpu();
 
-#ifdef CAP_MPI
+  MPI_Comm comm_group;
+  MPI_Comm_split(MPI_COMM_WORLD, myid / groupsize, myid % groupsize, &comm_group);
+
   {
-    CommBench::Bench<Type> across(MPI_COMM_WORLD, groupsize, CommBench::across, CommBench::MPI, count);
-    CommBench::Bench<Type> within(MPI_COMM_WORLD, subgroupsize, CommBench::within, CommBench::NCCL, count * 4);
-
-    //across.test();
-    //within.test();
+    CommBench::Bench<Type> global(MPI_COMM_WORLD, groupsize, CommBench::across, CommBench::MPI, count);
+    CommBench::Bench<Type> local(comm_group, subgroupsize, CommBench::across, CommBench::MPI, count * ratio);
+    //CommBench::Bench<Type> self(MPI_COMM_WORLD, subgroupsize, CommBench::within, CommBench::self, count * ratio);
 
     double totalTime = 0;
     double totalData = 0;
+    double localTime = 0;
+    double localData = 0;
     for(int iter = -1; iter < numiter; iter++) {
       MPI_Barrier(MPI_COMM_WORLD);
       double time = MPI_Wtime();
-      across.start();
-      within.start();
-      within.wait();
-      across.wait();
+      global.start();
+      local.start();
+      // self.start();
+      // self.wait();
+      local.wait();
+      MPI_Barrier(comm_group);
+      double localtime = MPI_Wtime() - time;
+      global.wait();
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
       if(iter < 0) {
@@ -112,24 +123,27 @@ int main(int argc, char *argv[])
           printf("time: %e\n", time);
         totalTime += time;
         totalData += 2 * (numgroup - 1) * count * sizeof(Type) / 1.e9;
+        localTime += localtime;
+        localData += 2 * (groupsize - 1) * count * sizeof(Type) / 1.e9 * ratio;
       }
     }
-    if(myid == ROOT)
-      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- GPU-Aware MPI\n\n", totalTime, totalData, totalData / totalTime * groupsize);
+    if(myid == ROOT) {
+      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- Global\n\n", totalTime, totalData, totalData / totalTime * groupsize);
+      printf("localTime: %e localData: %.2e GB (%e GB/s) --- Local\n\n", localTime, localData, localData / localTime * subgroupsize);
+    }
   }
-#endif
 
-#ifdef CAP_NCCL
-  { 
-    CommBench::Bench<Type> across(MPI_COMM_WORLD, groupsize, CommBench::across, CommBench::NCCL, count);
-    
+  return 0;
+
+  {
+    CommBench::Bench<Type> local(comm_group, subgroupsize, CommBench::across, CommBench::MPI, count * ratio);
     double totalTime = 0;
     double totalData = 0;
     for(int iter = -1; iter < numiter; iter++) {
       MPI_Barrier(MPI_COMM_WORLD);
       double time = MPI_Wtime();
-      across.start();
-      across.wait();
+      local.start();
+      local.wait();
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
       if(iter < 0) {
@@ -140,14 +154,38 @@ int main(int argc, char *argv[])
         if(myid == ROOT)
           printf("time: %e\n", time);
         totalTime += time;
-        totalData += 2 * (numgroup - 1) * count * sizeof(Type) / 1.e9;
+        totalData += 2 * (groupsize - 1) * count * sizeof(Type) / 1.e9 * ratio;
       }
     }
     if(myid == ROOT)
-      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- GPU-Aware NCCL\n\n", totalTime, totalData, totalData / totalTime * groupsize);
+      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- Local\n\n", totalTime, totalData, totalData / totalTime * subgroupsize);
   }
-#endif
 
+  {
+    CommBench::Bench<Type> self(MPI_COMM_WORLD, subgroupsize, CommBench::within, CommBench::self, count * ratio);
+    double totalTime = 0;
+    double totalData = 0;
+    for(int iter = -1; iter < numiter; iter++) {
+      MPI_Barrier(MPI_COMM_WORLD);
+      double time = MPI_Wtime();
+      self.start();
+      self.wait();
+      MPI_Barrier(MPI_COMM_WORLD);
+      time = MPI_Wtime() - time;
+      if(iter < 0) {
+        if(myid == ROOT)
+          printf("warmup time: %e\n", time);
+      }
+      else {
+        if(myid == ROOT)
+          printf("time: %e\n", time);
+        totalTime += time;
+        totalData += 2 * subgroupsize * count * sizeof(Type) / 1.e9 * ratio;
+      }
+    }
+    if(myid == ROOT)
+      printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- Self\n\n", totalTime, totalData, totalData / totalTime);
+  }
 
   // FINALIZE
   MPI_Finalize();

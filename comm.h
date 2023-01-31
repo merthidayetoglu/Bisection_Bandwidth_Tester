@@ -88,6 +88,9 @@ namespace CommBench
       int numproc;
       MPI_Comm_rank(comm, &myid);
       MPI_Comm_size(comm, &numproc);
+      if(myid_root == ROOT)
+        for(int p = 0; p < numproc; p++)
+          printf("myid %d send %d recv %d\n", myid, sendcount[p], recvcount[p]);
       // SETUP COMM INFO
       numsend = 0;
       numrecv = 0;

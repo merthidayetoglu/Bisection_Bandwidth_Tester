@@ -24,6 +24,19 @@ namespace CommBench
     void wait() { comm->wait(); };
     void test();
 
+    ~Bench() {
+#ifdef PORT_CUDA
+      cudaFree(sendbuf);
+      cudaFree(recvbuf);
+#elif defined PORT_HIP
+      hipFree(sendbuf);
+      hipFree(recvbuf);
+#else
+      delete[] sendbuf;
+      delete[] recvbuf;
+#endif
+    };
+
     Bench(const MPI_Comm &comm_world, const int groupsize, const heuristic mode, capability cap, const size_t count) : mode(mode), count(count) {
 
       int myid_root;
@@ -70,9 +83,11 @@ namespace CommBench
       switch(mode) {
         case across:
           {
+            printf("allocate %e GB comm buffer\n", count * numgroup * sizeof(T) / 1.e9);
 #ifdef PORT_CUDA
-            if(myid_root == ROOT)
+            if(myid_root == ROOT) {
               printf("CUDA memory management\n");
+            }
             cudaMalloc(&sendbuf, count * sizeof(T));
             cudaMalloc(&recvbuf, count * (numgroup - 1) * sizeof(T));
 #elif defined PORT_HIP
@@ -103,6 +118,7 @@ namespace CommBench
           break;
         case within:
           {
+            printf("allocate %e GB comm buffer\n", count * (numgroup + 1) * sizeof(T) / 1.e9);
 #ifdef PORT_CUDA
             if(myid_root == ROOT)
               printf("CUDA memory management\n");
