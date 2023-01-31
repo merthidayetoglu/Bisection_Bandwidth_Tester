@@ -78,6 +78,12 @@ namespace CommBench
 
   template <typename T>
   Comm<T>::Comm(T *&sendbuf, size_t sendcount[], size_t sendoffset[], T *&recvbuf, size_t recvcount[], size_t recvoffset[], const MPI_Comm &comm, const capability cap) : comm(comm), cap(cap), sendbuf(sendbuf), recvbuf(recvbuf) {
+
+      int myid_root;
+      MPI_Comm_rank(MPI_COMM_WORLD, &myid_root);
+      if(myid_root == ROOT)
+        printf("Creating a Comm object requires global synchronization\n");
+
       int myid;
       int numproc;
       MPI_Comm_rank(comm, &myid);
@@ -114,43 +120,43 @@ namespace CommBench
       // SETUP CAPABILITY
       switch(cap) {
         case self:
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("SETUP self\n");
 #ifdef PORT_CUDA
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR CUDA\n");
           stream_self = new cudaStream_t[numsend];
           for(int send = 0; send < numsend; send++)
             cudaStreamCreate(stream_self + send);
 #elif defined PORT_HIP
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR HIP\n");
           stream_self = new hipStream_t[numsend];
           for(int send = 0; send < numsend; send++)
             hipStreamCreate(stream_self + send);
 #else
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR CPU\n");
 #endif
           break;
         case MPI:
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("SETUP GPU-AWARE MPI\n");
           sendrequest = new MPI_Request[numsend];
           recvrequest = new MPI_Request[numrecv];
 #ifdef PORT_CUDA
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR CUDA\n");
 #elif defined PORT_HIP
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR HIP\n");
 #else
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR CPU\n");
 #endif
           break;
         case MPI_staged:
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("SETUP CPU-Staged MPI\n");
           sendrequest_h = new MPI_Request[numsend];
           recvrequest_h = new MPI_Request[numrecv];
@@ -170,7 +176,7 @@ namespace CommBench
             for(int recv = 1; recv < numrecv; recv++)
               recvoffset_h[recv] = recvcount[recv];
 #ifdef PORT_CUDA
-            if(myid == ROOT)
+            if(myid_root == ROOT)
               printf("FOR CUDA\n");
             sendstream = new cudaStream_t[numsend];
             for(int send = 0; send < numsend; send++)
@@ -181,7 +187,7 @@ namespace CommBench
             cudaMallocHost(&sendbuf_h, sendcount_h * sizeof(T));
             cudaMallocHost(&recvbuf_h, recvcount_h * sizeof(T));
 #elif defined PORT_HIP
-            if(myid == ROOT)
+            if(myid_root == ROOT)
               printf("FOR HIP\n");
             sendstream = new hipStream_t[numsend];
             for(int send = 0; send < numsend; send++)
@@ -195,7 +201,7 @@ namespace CommBench
           }
           break;
         case NCCL:
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("SETUP NCCL\n");
 #ifdef CAP_NCCL
           ncclUniqueId id;
@@ -204,23 +210,23 @@ namespace CommBench
           MPI_Bcast(&id, sizeof(id), MPI_BYTE, 0, comm);
           ncclCommInitRank(&comm_nccl, numproc, id, myid);
 #ifdef PORT_CUDA
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR CUDA\n");
           cudaStreamCreate(&stream_nccl);
 #elif defined PORT_HIP
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR HIP\n");
           hipStreamCreate(&stream_nccl);
 #endif
 #endif
           break;
         case IPC:
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("SETUP IPC\n");
           recvbuf_ipc = new T*[numsend];
           recvoffset_ipc = new size_t[numsend];
 #ifdef PORT_CUDA
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR CUDA\n");
           {
             cudaIpcMemHandle_t handle_temp[numproc];
@@ -242,7 +248,7 @@ namespace CommBench
           for(int send = 0; send < numsend; send++)
             cudaStreamCreate(stream_ipc + send);
 #elif defined PORT_HIP
-          if(myid == ROOT)
+          if(myid_root == ROOT)
             printf("FOR HIP\n");
           {
             hipIpcMemHandle_t handle_temp[numproc];
@@ -268,6 +274,8 @@ namespace CommBench
         default:
           printf("Selected capability is not yet implemented for CommBench::Comm.\n");
       } // switch(cap)
+    if(myid_root == ROOT)
+      printf("\n");
   } // Comm::Comm
 
   template <typename T>
@@ -371,6 +379,7 @@ namespace CommBench
         break;
       case MPI:
         MPI_Waitall(numrecv, recvrequest, MPI_STATUSES_IGNORE);
+        MPI_Waitall(numsend, sendrequest, MPI_STATUSES_IGNORE);
         break;
       case MPI_staged:
         // MEMCPY LOOP
@@ -402,6 +411,7 @@ namespace CommBench
           hipStreamSynchronize(recvstream[recv]);
 #endif
         }
+        MPI_Waitall(numsend, sendrequest, MPI_STATUSES_IGNORE);
         break;
       case NCCL:
 #ifdef PORT_CUDA
@@ -418,6 +428,7 @@ namespace CommBench
           hipStreamSynchronize(stream_ipc[send]);
 #endif
         }
+        MPI_Barrier(comm);
         break;
       default:
         printf("Selected capability is not yet implemented for CommBench::Comm.wait.\n");
