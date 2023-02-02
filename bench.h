@@ -9,8 +9,8 @@ namespace CommBench
   template <typename T>
   class Bench
   {
-    MPI_Comm comm_group;
-    Comm<T> *comm;
+    MPI_Comm commgroup;
+    Comm<T> *transport;
 
     const heuristic mode;
     const size_t count;
@@ -20,11 +20,12 @@ namespace CommBench
 
     public:
 
-    void start() { comm->start(); };
-    void wait() { comm->wait(); };
+    void start() { transport->start(); };
+    void wait() { transport->wait(); };
     void test();
 
     ~Bench() {
+      delete[] transport;
 #ifdef PORT_CUDA
       cudaFree(sendbuf);
       cudaFree(recvbuf);
@@ -54,12 +55,12 @@ namespace CommBench
 
       switch(mode) {
         case across:
-          MPI_Comm_split(comm_world, myid % groupsize, myid / groupsize, &comm_group);
+          MPI_Comm_split(comm_world, myid % groupsize, myid / groupsize, &commgroup);
           if(myid_root == ROOT)
             printf("Split comm across groups of %d\n", groupsize);
           break;
         case within:
-          MPI_Comm_split(comm_world, myid / groupsize, myid % groupsize, &comm_group);
+          MPI_Comm_split(comm_world, myid / groupsize, myid % groupsize, &commgroup);
           if(myid_root == ROOT)
             printf("Split comm within groups of %d\n", groupsize);
           break;
@@ -67,8 +68,8 @@ namespace CommBench
 
       int mygroup;
       int numgroup;
-      MPI_Comm_rank(comm_group, &mygroup);
-      MPI_Comm_size(comm_group, &numgroup);
+      MPI_Comm_rank(commgroup, &mygroup);
+      MPI_Comm_size(commgroup, &numgroup);
 
       if(myid_root == ROOT && mode == across)
         printf("There are %d groups to comm. across\n", numgroup);
@@ -148,24 +149,44 @@ namespace CommBench
       if(myid_root == ROOT)
         printf("\n");
 
-      comm = new Comm<T>(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, comm_group, cap);
+      transport = new Comm<T>(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, commgroup, cap);
     }
 
   }; // class Bench
 
   template <typename T>
-  void Bench<T>::test() {
+  class Allgather {
 
-    int myid_root;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myid_root);
-#ifdef PORT_CUDA
-    cudaMemset(sendbuf, myid_root, count * sizeof(T));
-#elif defined PORT_HIP
-    hipMemset(sendbuf, myid_root, count * sizeof(T));
-#else
-    memset(sendbuf, myid_root, count * sizeof(T));
-#endif
+    Comm<T> *transport;
 
-  }
+    public:
+
+    Allgather(T *sendbuf, size_t count, T *recvbuf, const MPI_Comm &comm, capability cap) {
+
+      int myid;
+      int numproc;
+      MPI_Comm_rank(comm, &myid);
+      MPI_Comm_size(comm, &numproc);
+
+      if(myid == ROOT)
+        printf("CommBench: Creating Allgather object\n");
+
+      size_t sendcount[numproc];
+      size_t recvcount[numproc];
+      size_t sendoffset[numproc];
+      size_t recvoffset[numproc];
+      for(int p = 0; p < numproc; p++) {
+        sendcount[p] = count;
+        sendoffset[p] = 0;
+        recvcount[p] = count;
+        recvoffset[p] = p * count;
+      }
+
+      transport = new Comm<T>(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, comm, cap);
+    }
+
+    ~Allgather() {delete transport;};
+    void wait() {transport->start(); transport->wait();};
+  };
 
 } // namespace CommBench*/

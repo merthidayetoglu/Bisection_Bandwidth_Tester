@@ -1,12 +1,12 @@
 
 namespace CommBench
 {
-  enum capability {MPI, MPI_staged, NCCL, IPC, self};
+  enum capability {MPI, MPI_staged, NCCL, IPC, memcpy};
 
   template <typename T>
   class Comm {
 
-    const capability cap;
+    capability cap;
     const MPI_Comm &comm;
 
     // GPU-Aware MPI
@@ -48,15 +48,15 @@ namespace CommBench
 #endif
     size_t *recvoffset_ipc;
 
-    // self
+    // memcpy
 #ifdef PORT_CUDA
-    cudaStream_t *stream_self;
+    cudaStream_t *stream_memcpy;
 #elif defined PORT_HIP
-    hipStream_t *stream_self;
+    hipStream_t *stream_memcpy;
 #endif
 
-    T *&sendbuf;
-    T *&recvbuf;
+    T *sendbuf;
+    T *recvbuf;
     int numsend;
     int numrecv;
     int *sendproc;
@@ -68,16 +68,59 @@ namespace CommBench
 
     public:
 
-    Comm(T* &sendbuf, size_t sendcount[], size_t sendoffset[],
-         T* &recvbuf, size_t recvcount[], size_t recvoffset[],
-         const MPI_Comm &comm, const capability cap);
+    Comm(T *sendbuf, size_t sendcount[], size_t sendoffset[],
+         T *recvbuf, size_t recvcount[], size_t recvoffset[],
+         const MPI_Comm &comm, capability cap);
+    ~Comm();
 
     void start();
     void wait();
   };
 
   template <typename T>
-  Comm<T>::Comm(T *&sendbuf, size_t sendcount[], size_t sendoffset[], T *&recvbuf, size_t recvcount[], size_t recvoffset[], const MPI_Comm &comm, const capability cap) : comm(comm), cap(cap), sendbuf(sendbuf), recvbuf(recvbuf) {
+  Comm<T>::~Comm() {
+
+    delete[] sendproc;
+    delete[] recvproc;
+    delete[] sendcount;
+    delete[] recvcount;
+    delete[] sendoffset;
+    delete[] recvoffset;
+
+    switch(cap) {
+      case MPI:
+        delete[] sendrequest;
+        delete[] recvrequest;
+        break;
+      case NCCL:
+#ifdef CAP_NCCL
+        ncclCommDestroy(comm_nccl);
+#endif
+#ifdef PORT_CUDA
+        cudaStreamDestroy(stream_nccl);
+#elif defined PORT_HIP
+        hipStreamDestroy(stream_nccl);
+#endif
+        break;
+      case IPC:
+        for(int send = 0; send < numsend; send++) {
+#ifdef PORT_CUDA
+          cudaIpcCloseMemHandle(recvbuf_ipc[send]);
+          cudaStreamDestroy(stream_ipc[send]);
+#elif defined PORT_HIP
+          hipIpcCloseMemHandle(recvbuf_ipc[send]);
+          hipStreamDestroy(stream_ipc[send]);
+#endif
+        }
+        delete[] recvoffset_ipc;
+        break;
+    }
+  }
+
+  template <typename T>
+  Comm<T>::Comm(T *sendbuf, size_t sendcount[], size_t sendoffset[],
+                T *recvbuf, size_t recvcount[], size_t recvoffset[],
+                const MPI_Comm &comm, capability cap) : comm(comm), cap(cap), sendbuf(sendbuf), recvbuf(recvbuf) {
 
       int myid_root;
       MPI_Comm_rank(MPI_COMM_WORLD, &myid_root);
@@ -88,9 +131,7 @@ namespace CommBench
       int numproc;
       MPI_Comm_rank(comm, &myid);
       MPI_Comm_size(comm, &numproc);
-      if(myid_root == ROOT)
-        for(int p = 0; p < numproc; p++)
-          printf("myid %d send %d recv %d\n", myid, sendcount[p], recvcount[p]);
+
       // SETUP COMM INFO
       numsend = 0;
       numrecv = 0;
@@ -122,27 +163,8 @@ namespace CommBench
       }
       // SETUP CAPABILITY
       switch(cap) {
-        case self:
-          if(myid_root == ROOT)
-            printf("SETUP self\n");
-#ifdef PORT_CUDA
-          if(myid_root == ROOT)
-            printf("FOR CUDA\n");
-          stream_self = new cudaStream_t[numsend];
-          for(int send = 0; send < numsend; send++)
-            cudaStreamCreate(stream_self + send);
-#elif defined PORT_HIP
-          if(myid_root == ROOT)
-            printf("FOR HIP\n");
-          stream_self = new hipStream_t[numsend];
-          for(int send = 0; send < numsend; send++)
-            hipStreamCreate(stream_self + send);
-#else
-          if(myid_root == ROOT)
-            printf("FOR CPU\n");
-#endif
-          break;
         case MPI:
+// ***************************************************************************************** SETUP GPU-Aware MPI
           if(myid_root == ROOT)
             printf("SETUP GPU-AWARE MPI\n");
           sendrequest = new MPI_Request[numsend];
@@ -159,6 +181,7 @@ namespace CommBench
 #endif
           break;
         case MPI_staged:
+// ***************************************************************************************** SETUP CPU-Staged MPI
           if(myid_root == ROOT)
             printf("SETUP CPU-Staged MPI\n");
           sendrequest_h = new MPI_Request[numsend];
@@ -204,6 +227,7 @@ namespace CommBench
           }
           break;
         case NCCL:
+// ***************************************************************************************** SETUP NCCL
           if(myid_root == ROOT)
             printf("SETUP NCCL\n");
 #ifdef CAP_NCCL
@@ -224,6 +248,7 @@ namespace CommBench
 #endif
           break;
         case IPC:
+// ***************************************************************************************** SETUP IPC
           if(myid_root == ROOT)
             printf("SETUP IPC\n");
           recvbuf_ipc = new T*[numsend];
@@ -274,6 +299,27 @@ namespace CommBench
             hipStreamCreate(stream_ipc + send);
 #endif
           break;
+// ***************************************************************************************** SETUP memcpy
+        case memcpy:
+          if(myid_root == ROOT)
+            printf("SETUP memcpy\n");
+#ifdef PORT_CUDA
+          if(myid_root == ROOT)
+            printf("FOR CUDA\n");
+          stream_memcpy = new cudaStream_t[numsend];
+          for(int send = 0; send < numsend; send++)
+            cudaStreamCreate(stream_memcpy + send);
+#elif defined PORT_HIP
+          if(myid_root == ROOT)
+            printf("FOR HIP\n");
+          stream_memcpy = new hipStream_t[numsend];
+          for(int send = 0; send < numsend; send++)
+            hipStreamCreate(stream_memcpy + send);
+#else
+          if(myid_root == ROOT)
+            printf("FOR CPU\n");
+#endif
+          break;
         default:
           printf("Selected capability is not yet implemented for CommBench::Comm.\n");
       } // switch(cap)
@@ -284,27 +330,15 @@ namespace CommBench
   template <typename T>
   void Comm<T>::start() {
     switch(cap) {
-      // SELF IMPLEMENTATION
-      case self:
-        for(int send = 0; send < numsend; send++) {
-#ifdef PORT_CUDA
-          cudaMemcpyAsync(recvbuf + recvoffset[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T), cudaMemcpyDeviceToDevice, stream_self[send]);
-#elif defined PORT_HIP
-          hipMemcpyAsync(recvbuf + recvoffset[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T), hipMemcpyDeviceToDevice, stream_self[send]);
-#else
-          memcpy(recvbuf + recvoffset[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T));
-#endif
-        }
-        break;
-      // MPI IMPLEMENTATION
       case MPI:
+// ***************************************************************************************** START GPU-Aware MPI
         for (int send = 0; send < numsend; send++)
           MPI_Isend(sendbuf + sendoffset[send], sendcount[send] * sizeof(T), MPI_BYTE, sendproc[send], 0, comm, sendrequest + send);         
         for (int recv = 0; recv < numrecv; recv++)
           MPI_Irecv(recvbuf + recvoffset[recv], recvcount[recv] * sizeof(T), MPI_BYTE, recvproc[recv], 0, comm, recvrequest + recv);         
         break;
-      // CPU-Staged MPI IMPLEMENTATION
       case MPI_staged:
+// ***************************************************************************************** START CPU-Staged MPI
         for (int recv = 0; recv < numrecv; recv++)
           MPI_Irecv(recvbuf_h + recvoffset_h[recv], recvcount[recv] * sizeof(T), MPI_BYTE, recvproc[recv], 0, comm, recvrequest_h + recv);
         for (int send = 0; send < numsend; send++) {
@@ -336,8 +370,8 @@ namespace CommBench
           }
         }
         break;
-      // NCCL IMPLEMENTATION
       case NCCL:
+// ***************************************************************************************** START NCCL
 #ifdef CAP_NCCL
         ncclGroupStart(); 
         for(int send = 0; send < numsend; send++)
@@ -347,18 +381,25 @@ namespace CommBench
         ncclGroupEnd();
         break;
 #endif
-      // IPC IMPLEMENTATION
       case IPC:
-        int myid;
-        int numproc;
-        MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-        MPI_Comm_size(MPI_COMM_WORLD, &numproc);
-
+// ***************************************************************************************** START IPC
         for(int send = 0; send < numsend; send++) {
 #ifdef PORT_CUDA
           cudaMemcpyAsync(recvbuf_ipc[send] + recvoffset_ipc[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T), cudaMemcpyDeviceToDevice, stream_ipc[send]);
-#elif PORT_HIP
+#elif defined PORT_HIP
           hipMemcpyAsync(recvbuf_ipc[send] + recvoffset_ipc[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T), hipMemcpyDeviceToDevice, stream_ipc[send]);
+#endif
+        }
+        break;
+// ***************************************************************************************** START memcpy
+      case memcpy:
+        for(int send = 0; send < numsend; send++) {
+#ifdef PORT_CUDA
+          cudaMemcpyAsync(recvbuf + recvoffset[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T), cudaMemcpyDeviceToDevice, stream_memcpy[send]);
+#elif defined PORT_HIP
+          hipMemcpyAsync(recvbuf + recvoffset[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T), hipMemcpyDeviceToDevice, stream_memcpy[send]);
+#else
+          memcpy(recvbuf + recvoffset[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T));
 #endif
         }
         break;
@@ -371,20 +412,23 @@ namespace CommBench
   template <typename T>
   void Comm<T>::wait() { 
     switch(cap) {
-      case self:
+      case memcpy:
+// ***************************************************************************************** WAIT memcpy
         for(int send = 0; send < numsend; send++) {
 #ifdef PORT_CUDA
-          cudaStreamSynchronize(stream_self[send]);
+          cudaStreamSynchronize(stream_memcpy[send]);
 #elif defined PORT_HIP
-          hipStreamSynchronize(stream_self[send]);
+          hipStreamSynchronize(stream_memcpy[send]);
 #endif
         }
         break;
       case MPI:
+// ***************************************************************************************** WAIT GPU-Aware MPI
         MPI_Waitall(numrecv, recvrequest, MPI_STATUSES_IGNORE);
         MPI_Waitall(numsend, sendrequest, MPI_STATUSES_IGNORE);
         break;
       case MPI_staged:
+// ***************************************************************************************** WAIT CPU-Staged MPI
         // MEMCPY LOOP
         {
           bool done_recv = false;
@@ -417,17 +461,19 @@ namespace CommBench
         MPI_Waitall(numsend, sendrequest, MPI_STATUSES_IGNORE);
         break;
       case NCCL:
+// ***************************************************************************************** WAIT NCCL
 #ifdef PORT_CUDA
         cudaStreamSynchronize(stream_nccl);
-#elif defined(PORT_HIP)
+#elif defined PORT_HIP
         hipStreamSynchronize(stream_nccl);
 #endif
         break;
       case IPC:
+// ***************************************************************************************** WAIT IPC
         for(int send = 0; send < numsend; send++) {
 #ifdef PORT_CUDA
           cudaStreamSynchronize(stream_ipc[send]);
-#elif defined(PORT_HIP)
+#elif defined PORT_HIP
           hipStreamSynchronize(stream_ipc[send]);
 #endif
         }
