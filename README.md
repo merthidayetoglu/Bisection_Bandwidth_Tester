@@ -13,7 +13,7 @@ Considering a hierarchical communication network, MPI ranks are assumed to be as
 
 This tool runs like
 ```cpp
-mpirun -np #numproc Alltoall #count #numiter #groupsize
+mpirun -np #numproc Alltoall #count #warmup #numiter #groupsize
 ```
 where count is the number of 32-byte words between two GPUs. The number of iterations is for averaging the bandwidth over many times. The program performs one warmup round and measures time over the number of iteration where each iteration are bulk-synchronized individually.
 
@@ -26,8 +26,8 @@ We use the default MPI implementation in the system. You can find more details i
 | Porting Options   | Capability | Include |
 | :---:               | ---: | :--- |
 |Default is on CPU  | MPI | `#define MPI` |
-|`#define SCI_CUDA` | CUDA-Aware MPI <br> CPU-Staged MPI <br> NCCL <br> CUDA IPC | `#define MPI` <br> `#define MPI_staged` <br> `#define NCCL` <br> `#define IPC` |
-|`#define SCI_HIP`  | GPU-Aware MPI <br> CPU-Staged MPI <br> (AMD port) NCCL <br> HIP IPC | `#define MPI` <br> `#define MPI_staged` <br> `#define NCCL` <br> `#define IPC` |
+|`#define PORT_CUDA` | CUDA-Aware MPI <br> CPU-Staged MPI <br> NCCL <br> CUDA IPC | `#define MPI` <br> `#define MPI_staged` <br> `#define NCCL` <br> `#define IPC` |
+|`#define PORT_HIP`  | GPU-Aware MPI <br> CPU-Staged MPI <br> (AMD port) NCCL <br> HIP IPC | `#define MPI` <br> `#define MPI_staged` <br> `#define NCCL` <br> `#define IPC` |
 
 Running on each system is like driving a different sports car, which has different handling and steering behaviour. This benchmarking tool helps understanding of the system characteristics. Our evaluation of various systems can be found below.
 
