@@ -26,8 +26,8 @@
 // #include <rccl.h>
 
 // PORTS
-// #define SCI_CUDA
-// #define SCI_HIP
+// #define PORT_CUDA
+// #define PORT_HIP
 
 // CAPABILITIES
  #define MPI
@@ -56,8 +56,9 @@ int main(int argc, char *argv[])
   if(omp_get_thread_num() == 0)
     numthread = omp_get_num_threads();
   size_t count = atoi(argv[1]);
-  int numiter = atoi(argv[2]);
-  int groupsize = atoi(argv[3]);
+  int warmup = atoi(argv[2]);
+  int numiter = atoi(argv[3]);
+  int groupsize = atoi(argv[4]);
   int numgroup = numproc / groupsize;
   int mygroup = myid / groupsize;
   // PRINT NUMBER OF PROCESSES AND THREADS
@@ -66,6 +67,7 @@ int main(int argc, char *argv[])
     printf("\n");
     printf("Number of processes: %d\n", numproc);
     printf("Number of threads per proc: %d\n", numthread);
+    printf("Number of warmup %d\n", warmup);
     printf("Number of iterations %d\n", numiter);
     printf("Number of proc. per group: %d\n", groupsize);
     printf("Number of groups: %d\n", numgroup);
@@ -86,7 +88,7 @@ int main(int argc, char *argv[])
   MPI_Comm comm;
   MPI_Comm_split(MPI_COMM_WORLD, myid % groupsize, mygroup, &comm);
 
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
   if(myid == ROOT)
     printf("CUDA VERSION\n");
   // SET DEVICE
@@ -122,7 +124,7 @@ int main(int argc, char *argv[])
     printf("32-bit Reg. per block: %d\n",deviceProp.regsPerBlock);
     printf("\n");
   }
-#elif defined SCI_HIP
+#elif defined PORT_HIP
   if(myid == ROOT)
     printf("HIP VERSION\n");
   //DEVICE MANAGEMENT
@@ -156,9 +158,9 @@ int main(int argc, char *argv[])
       printf("ENABLE GPU-Aware MPI\n");
     double totalTime = 0;
     double totalData = 0;
-    for(int iter = 0; iter < numiter; iter++)
+    for(int iter = -warmup; iter < numiter; iter++)
     {
-#if !defined SCI_CUDA && !defined SCI_HIP
+#if !defined PORT_CUDA && !defined PORT_HIP
       memset(sendbuf_d, 0, count * sizeof(Type));
       memset(recvbuf_d, 0, numgroup * count * sizeof(Type));
 #endif
@@ -166,8 +168,8 @@ int main(int argc, char *argv[])
       MPI_Request recvrequest[numgroup];
       int sendproc = 0;
       int recvproc = 0;
-      double time = MPI_Wtime();
       MPI_Barrier(MPI_COMM_WORLD);
+      double time = MPI_Wtime();
       for(int group = 0; group < numgroup; group++)
         if(group != mygroup) {
           MPI_Irecv(recvbuf_d + group * count, count * sizeof(Type), MPI_BYTE, group, MPI_ANY_TAG, comm, recvrequest + recvproc);
@@ -178,7 +180,7 @@ int main(int argc, char *argv[])
       MPI_Waitall(recvproc, recvrequest, MPI_STATUSES_IGNORE);
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(iter == 0)
+      if(iter < 0)
       {
         if(myid == ROOT)
           printf("warmup time: %e\n", time);
@@ -203,13 +205,13 @@ int main(int argc, char *argv[])
     // ********************************************* SETUP CPU-Staged MPI **********************************************************
     Type *sendbuf_h;
     Type *recvbuf_h;
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
     cudaMallocHost(&sendbuf_h, count * numgroup * sizeof(Type));
     cudaMallocHost(&recvbuf_h, count * numgroup * sizeof(Type));
     cudaStream_t stream[numgroup];
     for(int group = 0; group < numgroup; group++)
       cudaStreamCreate(stream + group);
-#elif defined SCI_HIP
+#elif defined PORT_HIP
     hipHostMalloc(&sendbuf_h, count * numgroup * sizeof(Type), 0);
     hipHostMalloc(&recvbuf_h, count * numgroup * sizeof(Type), 0);
     hipStream_t stream[numgroup];
@@ -223,18 +225,18 @@ int main(int argc, char *argv[])
     // *****************************************************************************************************************************
     double totalTime = 0;
     double totalData = 0;
-    for(int iter = 0; iter < numiter + 1; iter++)
+    for(int iter = -warmup; iter < numiter; iter++)
     { 
       memset(sendcomplete, 0, numgroup);
       memset(recvcomplete, 0, numgroup);
-      double time = MPI_Wtime();
       MPI_Barrier(MPI_COMM_WORLD);
+      double time = MPI_Wtime();
       for (int group = 0; group < numgroup; group++)
         if(group != mygroup) {
           MPI_Irecv(recvbuf_h + group * count, count * sizeof(Type), MPI_BYTE, group, MPI_ANY_TAG, comm, recvrequest + group);
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
           cudaMemcpyAsync(sendbuf_h + group * count, sendbuf_d, count * sizeof(Type), cudaMemcpyDeviceToHost, stream[group]);
-#elif defined SCI_HIP
+#elif defined PORT_HIP
           hipMemcpyAsync(sendbuf_h + group * count, sendbuf_d, count * sizeof(Type), hipMemcpyDeviceToHost, stream[group]);
 #endif
         }
@@ -244,9 +246,9 @@ int main(int argc, char *argv[])
         done_send = true;
         for(int group = 0; group < numgroup; group++)
           if(group != mygroup && !sendcomplete[group]) {
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
             if(cudaStreamQuery(stream[group]) == cudaSuccess) {
-#elif defined SCI_HIP
+#elif defined PORT_HIP
             if(hipStreamQuery(stream[group]) == hipSuccess) {
 #endif
               MPI_Isend(sendbuf_h + group * count, count * sizeof(Type), MPI_BYTE, group, 0, comm, sendrequest + group);
@@ -264,9 +266,9 @@ int main(int argc, char *argv[])
             int flag = 0;
             MPI_Test(recvrequest + group, &flag, MPI_STATUS_IGNORE);
             if(flag) {
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
               cudaMemcpyAsync(recvbuf_d + group * count, recvbuf_h + group * count, count * sizeof(Type), cudaMemcpyHostToDevice, stream[group]);
-#elif defined SCI_HIP
+#elif defined PORT_HIP
               hipMemcpyAsync(recvbuf_d + group * count, recvbuf_h + group * count, count * sizeof(Type), hipMemcpyHostToDevice, stream[group]);
 #endif
               recvcomplete[group] = true;
@@ -274,14 +276,14 @@ int main(int argc, char *argv[])
             done_recv = false;
           }
       }
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
       cudaDeviceSynchronize();
-#elif defined SCI_HIP
+#elif defined PORT_HIP
       hipDeviceSynchronize();
 #endif
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(iter == 0)
+      if(iter < 0)
       {
         if(myid == ROOT)
           printf("warmup time: %e\n", time);
@@ -298,9 +300,9 @@ int main(int argc, char *argv[])
       printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- CPU-Staged MPI\n", totalTime, totalData, totalData / totalTime * groupsize);
 
     for(int group = 0; group < numgroup; group++)
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
       cudaStreamDestroy(stream[group]);
-#elif defined SCI_HIP
+#elif defined PORT_HIP
       hipStreamDestroy(stream[group]);
 #endif
   }
@@ -308,7 +310,7 @@ int main(int argc, char *argv[])
 
 #ifdef IPC
   {
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
     if(myid == ROOT)
       printf("ENABLE CUDA IPC\n");
     // ********************************************* SETUP CUDA IPC ****************************************************************
@@ -330,7 +332,7 @@ int main(int argc, char *argv[])
     // *****************************************************************************************************************************
     double totalData = 0;
     double totalTime = 0;
-    for(int iter = 0; iter < numiter + 1; iter++)
+    for(int iter = -warmup; iter < numiter; iter++)
     {
       cudaDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
@@ -341,7 +343,7 @@ int main(int argc, char *argv[])
       cudaDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(iter == 0)
+      if(iter < 0)
       { 
         if(myid == ROOT)
           printf("warmup time %e\n", time);
@@ -358,7 +360,7 @@ int main(int argc, char *argv[])
       printf("totalTime: %e totalData: %.2e GB (%e GB/s) --- IPC\n", totalTime, totalData, totalData / totalTime * groupsize);
     for(int group = 0; group < numgroup; group++)
       cudaStreamDestroy(stream_ipc[group]);
-#elif defined SCI_HIP
+#elif defined PORT_HIP
     if(myid == ROOT)
       printf("ENABLE HIP IPC\n");
     // ********************************************** SETUP HIP IPC ****************************************************************
@@ -380,7 +382,7 @@ int main(int argc, char *argv[])
     // *****************************************************************************************************************************
     double totalData = 0;
     double totalTime = 0;
-    for(int iter = 0; iter < numiter + 1; iter++)
+    for(int iter = -warmup; iter < numiter; iter++)
     {
       hipDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
@@ -391,7 +393,7 @@ int main(int argc, char *argv[])
       hipDeviceSynchronize();
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(iter == 0)
+      if(iter < 0)
       {
         if(myid == ROOT)
           printf("warmup time %e\n", time);
@@ -426,7 +428,7 @@ int main(int argc, char *argv[])
     // *****************************************************************************************************************************
     double totalTime = 0;
     double totalData = 0;
-    for(int iter = 0; iter < numiter + 1; iter++) {
+    for(int iter = -warmup; iter < numiter; iter++) {
       MPI_Barrier(MPI_COMM_WORLD);
       double time = MPI_Wtime();
       ncclGroupStart();
@@ -436,14 +438,14 @@ int main(int argc, char *argv[])
             ncclRecv(recvbuf_d + group * count, count * sizeof(Type), ncclInt8, group, comm_nccl, 0);
         }
       ncclGroupEnd();
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
       cudaDeviceSynchronize();
-#elif defined SCI_HIP
+#elif defined PORT_HIP
       hipDeviceSynchronize();
 #endif
       MPI_Barrier(MPI_COMM_WORLD);
       time = MPI_Wtime() - time;
-      if(iter == 0)
+      if(iter < 0)
       {
         if(myid == ROOT)
           printf("warmup time %e\n", time);
@@ -464,10 +466,10 @@ int main(int argc, char *argv[])
 #endif
 
   // RELEASE GPU POINTERS
-#ifdef SCI_CUDA
+#ifdef PORT_CUDA
   cudaFree(sendbuf_d);
   cudaFree(recvbuf_d);
-#elif defined SCI_HIP
+#elif defined PORT_HIP
   hipFree(sendbuf_d);
   hipFree(recvbuf_d);
 #else
