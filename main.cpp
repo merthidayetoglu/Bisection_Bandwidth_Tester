@@ -77,8 +77,10 @@ int main(int argc, char *argv[])
 
   setup_gpu();
 
+  #include "test_saturation.h"
+
  //#include "test_capability.h"
- #include "test_allgather.h"
+ //#include "test_allgather.h"
 
   // FINALIZE
   MPI_Finalize();

@@ -25,7 +25,7 @@ namespace CommBench
     void test();
 
     ~Bench() {
-      delete[] transport;
+      delete transport;
 #ifdef PORT_CUDA
       cudaFree(sendbuf);
       cudaFree(recvbuf);
@@ -43,7 +43,8 @@ namespace CommBench
       int myid_root;
       MPI_Comm_rank(MPI_COMM_WORLD, &myid_root);
       if(myid_root == ROOT)
-        printf("Creating a Bench object requires global synchronization\n");
+        printf("CommBench: Creating a Bench object requires global synchronization\n");
+
 
       int myid;
       int numproc;
@@ -51,18 +52,18 @@ namespace CommBench
       MPI_Comm_size(comm_world, &numproc);
 
       if(myid_root == ROOT)
-        printf("Create bench with %d processes\n", numproc);
+        printf("CommBench: Create bench with %d processes\n", numproc);
 
       switch(mode) {
         case across:
           MPI_Comm_split(comm_world, myid % groupsize, myid / groupsize, &commgroup);
           if(myid_root == ROOT)
-            printf("Split comm across groups of %d\n", groupsize);
+            printf("CommBench: Split comm across groups of %d\n", groupsize);
           break;
         case within:
           MPI_Comm_split(comm_world, myid / groupsize, myid % groupsize, &commgroup);
           if(myid_root == ROOT)
-            printf("Split comm within groups of %d\n", groupsize);
+            printf("CommBench: Split comm within groups of %d\n", groupsize);
           break;
       }
 
@@ -70,11 +71,6 @@ namespace CommBench
       int numgroup;
       MPI_Comm_rank(commgroup, &mygroup);
       MPI_Comm_size(commgroup, &numgroup);
-
-      if(myid_root == ROOT && mode == across)
-        printf("There are %d groups to comm. across\n", numgroup);
-      if(myid_root == ROOT && mode == within)
-        printf("There are %d processes to comm within\n", numgroup);
 
       size_t sendcount[numgroup];
       size_t sendoffset[numgroup];
@@ -84,7 +80,10 @@ namespace CommBench
       switch(mode) {
         case across:
           {
-            printf("allocate %e GB comm buffer\n", count * numgroup * sizeof(T) / 1.e9);
+	    if(myid_root == ROOT) {
+              printf("CommBench: There are %d groups to comm. across\n", numgroup);
+              printf("CommBench: allocate %e GB comm buffer\n", count * numgroup * sizeof(T) / 1.e9);
+	    }
 #ifdef PORT_CUDA
             if(myid_root == ROOT) {
               printf("CUDA memory management\n");
@@ -119,7 +118,10 @@ namespace CommBench
           break;
         case within:
           {
-            printf("allocate %e GB comm buffer\n", count * (numgroup + 1) * sizeof(T) / 1.e9);
+            if(myid_root == ROOT) {
+              printf("allocate %e GB comm buffer\n", count * (numgroup + 1) * sizeof(T) / 1.e9);
+              printf("There are %d processes to comm within\n", numgroup);
+            }
 #ifdef PORT_CUDA
             if(myid_root == ROOT)
               printf("CUDA memory management\n");
