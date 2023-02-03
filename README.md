@@ -1,7 +1,7 @@
 # Bisection Bandwidth Tester
 This repository involves a unit test for measuring the bandwidth of communication of a group of processors (mainly GPUs). It is based on MPI and tests various capabilites such as CPU-Only MPI, GPU-Aware MPI, CPU-Staged MPI, NCCL, and IPC.
 
-Porting the capabilities are controlled by preprocessor directives. With no specification, it targets CPU by default. To port on Nvidia GPUs, one needs to ```#define SCI_CUDA```. To port on AMD GPUs, one needs to ```#define SCI_HIP```. Please refer to the table at the bottom to enable desired capabilities.
+Porting the capabilities are controlled by preprocessor directives. With no specification, it targets CPU by default. To port on Nvidia GPUs, one needs to ```#define PORT_CUDA```. To port on AMD GPUs, one needs to ```#define PORT_HIP```. Please refer to the table at the bottom to enable desired capabilities.
 
 There are two parameters to describe the logical group topology. The first one is the number of processors (p) and the second one is the group size (g). The benchmarking tool splits the global communicator ```MPI_COMM_WORLD``` into subcommunicators with ```MPI_Comm_split```. Eeach group talks to all other groups with a mapping between GPU as shown in the figure below.
 
