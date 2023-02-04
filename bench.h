@@ -4,6 +4,47 @@
 namespace CommBench
 {
 
+  class Arch {
+
+    const int numlevel;
+
+    MPI_Comm *comm_within = new MPI_Comm[numlevel + 1];
+    MPI_Comm *comm_across = new MPI_Comm[numlevel + 1];
+   
+    public:
+
+    Arch(const int numlevel, int groupsize[], const MPI_Comm &comm_world) : numlevel(numlevel) {
+
+      int myid;
+      int numproc;
+      MPI_Comm_rank(comm_world, &myid);
+      MPI_Comm_size(comm_world, &numproc);
+
+      MPI_Comm_split(comm_world, myid / numproc, myid % numproc, comm_within);
+      MPI_Comm_split(comm_world, myid % numproc, myid / numproc, comm_across);
+      for(int level = 1; level < numlevel; level++) {
+        int myid_within;
+        MPI_Comm_rank(comm_within[level - 1], &myid_within);
+        MPI_Comm_split(comm_within[level - 1], myid_within / groupsize[level - 1], myid_within % groupsize[level - 1], comm_within + level);
+        MPI_Comm_split(comm_within[level - 1], myid_within % groupsize[level - 1], myid_within / groupsize[level - 1], comm_across + level);
+      }
+      int myid_within;
+      MPI_Comm_rank(comm_within[numlevel - 1], &myid_within);
+      MPI_Comm_split(comm_within[numlevel - 1], myid_within / 1, myid_within % 1, comm_within + numlevel);
+      MPI_Comm_split(comm_within[numlevel - 1], myid_within % 1, myid_within / 1, comm_across + numlevel);
+
+      for(int level = 0; level < numlevel + 1; level++) {
+        int numproc_within;
+        int numproc_across;
+        MPI_Comm_size(comm_within[level], &numproc_within);
+        MPI_Comm_size(comm_across[level], &numproc_across);
+        if(myid == ROOT)
+          printf("level %d numproc_within %d numproc_across %d\n", level, numproc_within, numproc_across);
+      }
+    } 
+
+  };
+
   enum heuristic {across, within};
 
   template <typename T>

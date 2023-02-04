@@ -24,7 +24,7 @@
       if(myid == ROOT)
         printf("start %.2e time: %.2e\n", start, time);
      totalTime += time;
-     totalData += count * (numgroup - 1) * sizeof(Type) / 1.e9;
+     totalData += 2 * count * (numgroup - 1) * sizeof(Type) / 1.e9;
     }
   }
   if(myid == ROOT)

@@ -77,7 +77,14 @@ int main(int argc, char *argv[])
 
   setup_gpu();
 
-  #include "test_saturation.h"
+  {
+    int numlevel = 3;
+    int groupsize[numlevel - 1] = {6, 3};
+
+    CommBench::Arch arch(numlevel, groupsize, MPI_COMM_WORLD);
+  }
+
+  //#include "test_saturation.h"
 
  //#include "test_capability.h"
  //#include "test_allgather.h"
