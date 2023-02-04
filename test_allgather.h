@@ -1,5 +1,6 @@
 {
-
+  if(myid == ROOT)
+    printf("TEST ALLGATHER LATENCY\n");
   Type *sendbuf_d;
   Type *recvbuf_d;
 #ifdef PORT_CUDA

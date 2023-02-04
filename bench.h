@@ -6,7 +6,6 @@ namespace CommBench
 
   enum heuristic {across, within};
 
-
   template <typename T>
   class Bench
   {
@@ -167,42 +166,57 @@ namespace CommBench
     MPI_Comm_rank(commgroup, &myid);
     MPI_Comm_size(commgroup, &numproc);
 
-    T *sendbuf_h = new T[count];
-    T *recvbuf_h = new T[count * numproc];
+    int recvproc;
+    switch(mode) {case across: recvproc = numproc - 1; break; case within: recvproc = numproc; break;}
+
+    T *sendbuf = new T[count];
+    T *recvbuf = new T[count * recvproc];
 
     for(size_t i = 0; i < count; i++)
-      sendbuf_h[i].data[0] = myid;
+      sendbuf[i].data[0] = myid;
+    memset(recvbuf, -1, count * recvproc * sizeof(T));
 
 #ifdef PORT_CUDA
-    cudaMemcpy(sendbuf, sendbuf_h, count * sizeof(T), cudaMemcpyHostToDevice);
-    cudaMemset(recvbuf, -1, count * numproc * sizeof(T));
+    cudaMemcpy(this->sendbuf, sendbuf, count * sizeof(T), cudaMemcpyHostToDevice);
+    cudaMemset(this->recvbuf, -1, count * recvproc * sizeof(T));
 #elif defined PORT_HIP
-    hipMemcpy(sendbuf, sendbuf_h, count * sizeof(T), hipMemcpyHostToDevice);
-    hipMemset(recvbuf, -1, count * numproc * sizeof(T));
+    hipMemcpy(this->sendbuf, sendbuf, count * sizeof(T), hipMemcpyHostToDevice);
+    hipMemset(this->recvbuf, -1, count * recvproc * sizeof(T));
 #else
-    memcpy(sendbuf, sendbuf_h, count * sizeof(T));
-    memset(recvbuf, 5, count * numproc * sizeof(T));
+    memcpy(this->sendbuf, sendbuf, count * sizeof(T));
+    memset(this->recvbuf, -1, count * recvproc * sizeof(T));
 #endif
 
     this->start();
     this->wait();
 
 #ifdef PORT_CUDA
-    cudaMemcpy(recvbuf_h, recvbuf, count * numproc * sizeof(T), cudaMemcpyDeviceToHost);
+    cudaMemcpy(recvbuf, this->recvbuf, count * recvproc * sizeof(T), cudaMemcpyDeviceToHost);
 #elif defined PORT_HIP
-    hipMemcpy(recvbuf_h, recvbuf, count * numproc * sizeof(T), hipMemcpyDeviceToHost);
+    hipMemcpy(recvbuf, this->recvbuf, count * recvproc * sizeof(T), hipMemcpyDeviceToHost);
 #else
-    memcpy(recvbuf_h, recvbuf, count * numproc * sizeof(T));
+    memcpy(recvbuf, this->recvbuf, count * recvproc * sizeof(T));
 #endif
 
-    for(int p = 0; p < numproc; p++)
-      printf("myid %d recvbuf[%d] = %d\n", myid, p, recvbuf_h[p].data[0]);
-
     bool pass = true;
-    for(int p = 0; p < numproc; p++)
-      for(size_t i = 0; i < count; i++)
-        if(recvbuf_h[p * count + i].data[0] != p)
-          pass = false;
+    switch(mode) {
+      case across:
+        recvproc = 0;
+        for(int p = 0; p < numproc; p++)
+          if(p != myid) {
+            for(size_t i = 0; i < count; i++)
+              if(recvbuf[recvproc * count + i].data[0] != p)
+                pass = false;
+            recvproc++;
+          }
+        break;
+      case within:
+        for(int p = 0; p < numproc; p++)
+          for(size_t i = 0; i < count; i++)
+            if(recvbuf[p * count + i].data[0] != p)
+              pass = false;
+        break;
+    }
     MPI_Allreduce(MPI_IN_PLACE, &pass, 1, MPI_C_BOOL, MPI_LAND, MPI_COMM_WORLD);
     if(pass && myid == ROOT)
       printf("PASS!\n");
@@ -210,8 +224,8 @@ namespace CommBench
       if(myid == ROOT)
         printf("ERROR!!!!\n");
 
-    delete[] sendbuf_h;
-    delete[] recvbuf_h;
+    delete[] sendbuf;
+    delete[] recvbuf;
   }
 
   template <typename T>
