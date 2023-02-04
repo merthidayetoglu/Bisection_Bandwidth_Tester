@@ -1,18 +1,20 @@
 {
 
-  int groupsize = 4;
+  int groupsize = 8;
   int numgroup = numproc / groupsize;
 
-  CommBench::Bench<Type> test(MPI_COMM_WORLD, groupsize, CommBench::across, CommBench::MPI, count);
+  CommBench::Bench<Type> bench(MPI_COMM_WORLD, groupsize, CommBench::across, CommBench::MPI, count);
+
+  bench.test();
 
   double totalData = 0;
   double totalTime = 0;
   for (int iter = -warmup; iter < numiter; iter++) {
     MPI_Barrier(MPI_COMM_WORLD);
     double time = MPI_Wtime();
-    test.start();
+    bench.start();
     double start = MPI_Wtime() - time;
-    test.wait();
+    bench.wait();
     MPI_Barrier(MPI_COMM_WORLD);
     time = MPI_Wtime() - time;
     if(iter < 0) {

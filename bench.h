@@ -6,9 +6,11 @@ namespace CommBench
 
   enum heuristic {across, within};
 
+
   template <typename T>
   class Bench
   {
+
     MPI_Comm commgroup;
     Comm<T> *transport;
 
@@ -155,6 +157,62 @@ namespace CommBench
     }
 
   }; // class Bench
+
+
+  template <typename T>
+  void Bench<T>::test() {
+
+    int myid;
+    int numproc;
+    MPI_Comm_rank(commgroup, &myid);
+    MPI_Comm_size(commgroup, &numproc);
+
+    T *sendbuf_h = new T[count];
+    T *recvbuf_h = new T[count * numproc];
+
+    for(size_t i = 0; i < count; i++)
+      sendbuf_h[i].data[0] = myid;
+
+#ifdef PORT_CUDA
+    cudaMemcpy(sendbuf, sendbuf_h, count * sizeof(T), cudaMemcpyHostToDevice);
+    cudaMemset(recvbuf, -1, count * numproc * sizeof(T));
+#elif defined PORT_HIP
+    hipMemcpy(sendbuf, sendbuf_h, count * sizeof(T), hipMemcpyHostToDevice);
+    hipMemset(recvbuf, -1, count * numproc * sizeof(T));
+#else
+    memcpy(sendbuf, sendbuf_h, count * sizeof(T));
+    memset(recvbuf, 5, count * numproc * sizeof(T));
+#endif
+
+    this->start();
+    this->wait();
+
+#ifdef PORT_CUDA
+    cudaMemcpy(recvbuf_h, recvbuf, count * numproc * sizeof(T), cudaMemcpyDeviceToHost);
+#elif defined PORT_HIP
+    hipMemcpy(recvbuf_h, recvbuf, count * numproc * sizeof(T), hipMemcpyDeviceToHost);
+#else
+    memcpy(recvbuf_h, recvbuf, count * numproc * sizeof(T));
+#endif
+
+    for(int p = 0; p < numproc; p++)
+      printf("myid %d recvbuf[%d] = %d\n", myid, p, recvbuf_h[p].data[0]);
+
+    bool pass = true;
+    for(int p = 0; p < numproc; p++)
+      for(size_t i = 0; i < count; i++)
+        if(recvbuf_h[p * count + i].data[0] != p)
+          pass = false;
+    MPI_Allreduce(MPI_IN_PLACE, &pass, 1, MPI_C_BOOL, MPI_LAND, MPI_COMM_WORLD);
+    if(pass && myid == ROOT)
+      printf("PASS!\n");
+    else
+      if(myid == ROOT)
+        printf("ERROR!!!!\n");
+
+    delete[] sendbuf_h;
+    delete[] recvbuf_h;
+  }
 
   template <typename T>
   class Allgather {

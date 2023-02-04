@@ -42,7 +42,7 @@
   hipMemset(recvbuf_d, -1, count * numproc * sizeof(Type));
 #else
   memcpy(sendbuf_d, sendbuf, count * numproc * sizeof(Type));
-  memset(sendbuf_d, -1, count * numproc * sizeof(Type));
+  memset(recvbuf_d, -1, count * numproc * sizeof(Type));
 #endif
 
   {
