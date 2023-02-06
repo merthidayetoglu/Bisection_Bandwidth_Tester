@@ -2,7 +2,7 @@
   int groupsize = 6;
   int numgroup = numproc / groupsize;
 
-  CommBench::Bench<Type> bench(MPI_COMM_WORLD, groupsize, CommBench::across, CommBench::MPI, count);
+  CommBench::Bench<Type> bench(MPI_COMM_WORLD, groupsize, CommBench::within, CommBench::NCCL, count);
 
   bench.test();
 

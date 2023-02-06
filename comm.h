@@ -1,7 +1,7 @@
 
 namespace CommBench
 {
-  enum capability {MPI, MPI_staged, NCCL, IPC, memcpy};
+  enum capability {MEMCPY, MPI, MPI_staged, NCCL, IPC};
 
   template <typename T>
   class Comm {
@@ -300,7 +300,7 @@ namespace CommBench
 #endif
           break;
 // ***************************************************************************************** SETUP memcpy
-        case memcpy:
+        case MEMCPY:
           if(myid_root == ROOT)
             printf("SETUP memcpy\n");
 #ifdef PORT_CUDA
@@ -323,8 +323,6 @@ namespace CommBench
         default:
           printf("Selected capability is not yet implemented for CommBench::Comm.\n");
       } // switch(cap)
-    if(myid_root == ROOT)
-      printf("\n");
   } // Comm::Comm
 
   template <typename T>
@@ -392,7 +390,7 @@ namespace CommBench
         }
         break;
 // ***************************************************************************************** START memcpy
-      case memcpy:
+      case MEMCPY:
         for(int send = 0; send < numsend; send++) {
 #ifdef PORT_CUDA
           cudaMemcpyAsync(recvbuf + recvoffset[send], sendbuf + sendoffset[send], sendcount[send] * sizeof(T), cudaMemcpyDeviceToDevice, stream_memcpy[send]);
@@ -412,7 +410,7 @@ namespace CommBench
   template <typename T>
   void Comm<T>::wait() { 
     switch(cap) {
-      case memcpy:
+      case MEMCPY:
 // ***************************************************************************************** WAIT memcpy
         for(int send = 0; send < numsend; send++) {
 #ifdef PORT_CUDA

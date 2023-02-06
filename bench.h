@@ -6,12 +6,12 @@ namespace CommBench
 
   class Arch {
 
+    public:
+
     const int numlevel;
 
     MPI_Comm *comm_within = new MPI_Comm[numlevel + 1];
     MPI_Comm *comm_across = new MPI_Comm[numlevel + 1];
-   
-    public:
 
     Arch(const int numlevel, int groupsize[], const MPI_Comm &comm_world) : numlevel(numlevel) {
 
@@ -124,7 +124,7 @@ namespace CommBench
           {
 	    if(myid_root == ROOT) {
               printf("CommBench: There are %d groups to comm. across\n", numgroup);
-              printf("CommBench: allocate %e GB comm buffer\n", count * numgroup * sizeof(T) / 1.e9);
+              printf("CommBench: allocate %.2f MB comm buffer per GPU\n", count * numgroup * sizeof(T) / 1.e6);
 	    }
 #ifdef PORT_CUDA
             if(myid_root == ROOT) {
@@ -161,8 +161,8 @@ namespace CommBench
         case within:
           {
             if(myid_root == ROOT) {
-              printf("allocate %e GB comm buffer\n", count * (numgroup + 1) * sizeof(T) / 1.e9);
-              printf("There are %d processes to comm within\n", numgroup);
+              printf("CommBench: There are %d processes to comm within\n", numgroup);
+              printf("CommBench: allocate %.2f MB comm buffer per GPU\n", count * (numgroup + 1) * sizeof(T) / 1.e6);
             }
 #ifdef PORT_CUDA
             if(myid_root == ROOT)
@@ -189,9 +189,6 @@ namespace CommBench
           }
           break;
       }
-
-      if(myid_root == ROOT)
-        printf("\n");
 
       transport = new Comm<T>(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, commgroup, cap);
     }
@@ -272,11 +269,170 @@ namespace CommBench
   template <typename T>
   class Allgather {
 
+    const int numlevel;
+    const int commDim = 5;
+
     Comm<T> *transport;
+    Comm<T> ****transports = new Comm<T>***[numlevel];
 
     public:
 
-    Allgather(T *sendbuf, size_t count, T *recvbuf, const MPI_Comm &comm, capability cap) {
+    void waitall() {
+      for(int i = 0; i < 1; i++) {
+        for(int level = 0; level < numlevel+1; level++)
+          for(int dim = 0; dim < commDim; dim++) {
+             Comm<T> *ptr = transports[i][level][dim];
+             if(ptr) ptr->start();
+          }
+        for(int level = 0; level < numlevel+1; level++)
+          for(int dim = 0; dim < commDim; dim++) {
+             Comm<T> *ptr = transports[i][level][dim];
+             if(ptr) ptr->wait();
+          }
+      }
+    }
+
+    Allgather(T *sendbuf, size_t count, T *recvbuf, Arch &arch, capability *cap) : numlevel(arch.numlevel) {
+
+      int myid;
+      int numproc;
+      MPI_Comm_rank(arch.comm_within[0], &myid);
+      MPI_Comm_size(arch.comm_within[0], &numproc);
+
+
+      bool state[numproc][numproc];
+      for(int p1 = 0; p1 < numproc; p1++)
+        for(int p2 = 0; p2 < numproc; p2++)
+          state[p1][p2] = 0;
+
+      state[myid][myid] = 1;
+
+      MPI_Allreduce(MPI_IN_PLACE, state, numproc * numproc, MPI_C_BOOL, MPI_LOR, arch.comm_within[0]);
+
+      if(myid == ROOT) {
+        printf("state matrix\n");
+        for(int p1 = 0; p1 < numproc; p1++) {
+          for(int p2 = 0; p2 < numproc; p2++)
+            printf("%d ", state[p1][p2]);
+          printf("\n");
+        }
+      }
+
+      bool send_tot[numproc] = {false};
+      for(int i = 0; i < 2; i++) {
+
+        transports[i] = new Comm<T>**[numlevel + 1];
+
+        for(int level = 0; level < numlevel + 1; level++) {
+
+          int myid_within;
+          int myid_across;
+          int numproc_within;
+          int numproc_across;
+          MPI_Comm_size(arch.comm_across[level], &numproc_across);
+          MPI_Comm_rank(arch.comm_across[level], &myid_across);
+          MPI_Comm_size(arch.comm_within[level], &numproc_within);
+          MPI_Comm_rank(arch.comm_within[level], &myid_within);
+
+
+          transports[i][level] = new Comm<T>*[commDim]();
+          int commDim = 0;
+          {
+            bool found = false;
+
+            bool send[numproc] = {0};
+
+            size_t sendcount[numproc_across] = {0};
+            size_t recvcount[numproc_across] = {0};
+            size_t sendoffset[numproc_across];
+            size_t recvoffset[numproc_across];
+  
+            for(int proc = 0; proc < numproc_across; proc++) {
+              int recvid;
+              MPI_Sendrecv(&myid, 1, MPI_INT, proc, 0, &recvid, 1, MPI_INT, proc, 0, arch.comm_across[level], MPI_STATUS_IGNORE);
+              if(myid == ROOT)
+                printf("myid %d level %d proc %d recvid %d cap %d\n", myid, level, proc, recvid, cap[level]);
+              for(int p = 0; p < numproc; p++) {
+                if(state[recvid][p] && !send_tot[p]) {
+                  if(i == 0) {
+                    send[recvid] = true; 
+                    sendcount[proc] = count;
+                    recvcount[proc] = count;
+                    sendoffset[proc] = 0;
+                    recvoffset[proc] = recvid * count;
+                    found = true;
+                  }
+                  else {
+                    send[recvid] = true;
+                    sendcount[proc] = count;
+                    recvcount[proc] = count;
+                    sendoffset[proc] = ;
+                    recvoffset[proc] = recvid * count;
+                  }
+                  found = true;
+                  break;
+                }
+              }
+            }
+            for(int p = 0; p < numproc; p++)
+              send_tot[p] = send_tot[p] || send[p];
+
+            if(myid == ROOT) {
+              printf("level %d ****************************************\n", level);
+              printf("myid_within %d numproc_within %d\n", myid_within, numproc_within);
+              printf("myid_across %d numproc_across %d\n", myid_across, numproc_across);
+              printf("send     ");
+              for(int p = 0; p < numproc; p++)
+                printf("%d ", send[p]);
+              printf("\n");
+              printf("send_tot ");
+              for(int p = 0; p < numproc; p++)
+                printf("%d ", send_tot[p]);
+              printf("\n");
+            }
+
+            if(i == 0)
+              transports[i][level][commDim] = new Comm<T>(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, arch.comm_across[level], cap[level]);
+            else
+              transports[i][level][commDim] = new Comm<T>(recvbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, arch.comm_across[level], cap[level]);
+            commDim++;
+
+            // DONE
+            bool send_all[numproc][numproc];
+            MPI_Allgather(send, numproc, MPI_C_BOOL, send_all, numproc, MPI_C_BOOL, arch.comm_within[0]);
+
+            if(myid == ROOT) {
+              printf("commDim: %d\n", commDim);
+              printf("send_all\n");
+              for(int p1 = 0; p1 < numproc; p1++) {
+                for(int p2 = 0; p2 < numproc; p2++)
+                  printf("%d ", send_all[p1][p2]);
+                printf("\n");
+              }
+            }
+          }
+
+        }
+
+        for(int p = 0; p < numproc; p++)
+          state[myid][p] = state[myid][p] || send_tot[p];
+
+        MPI_Allreduce(MPI_IN_PLACE, state, numproc * numproc, MPI_C_BOOL, MPI_LOR, arch.comm_within[0]);
+
+        if(myid == ROOT) {
+          printf("state matrix\n");
+          for(int p1 = 0; p1 < numproc; p1++) {
+            for(int p2 = 0; p2 < numproc; p2++)
+              printf("%d ", state[p1][p2]);
+            printf("\n");
+          }
+        }
+
+
+      }
+    }
+
+    Allgather(T *sendbuf, size_t count, T *recvbuf, const MPI_Comm &comm, capability cap) : numlevel(1) {
 
       int myid;
       int numproc;
@@ -300,7 +456,7 @@ namespace CommBench
       transport = new Comm<T>(sendbuf, sendcount, sendoffset, recvbuf, recvcount, recvoffset, comm, cap);
     }
 
-    ~Allgather() {delete transport;};
+    //~Allgather() {delete transport;};
     void wait() {transport->start(); transport->wait();};
   };
 

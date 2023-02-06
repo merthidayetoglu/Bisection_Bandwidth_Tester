@@ -28,6 +28,44 @@
 #endif
 
   {
+    using namespace CommBench;
+    
+    int numlevel = 3;
+    int groupsize[numlevel - 1] = {6, 3};
+    
+    Arch arch(numlevel, groupsize, MPI_COMM_WORLD);
+    
+    capability cap[numlevel + 1] = {MEMCPY, MPI, IPC, NCCL};
+    
+    
+    Allgather<Type> test(sendbuf_d, count , recvbuf_d, arch, cap);
+  
+    double totalTime = 0;
+    double totalData = 0;
+    for (int iter = -warmup; iter < numiter; iter++) {
+      MPI_Barrier(MPI_COMM_WORLD);
+      double time = MPI_Wtime();
+      //test.start();
+      test.waitall();
+      MPI_Barrier(MPI_COMM_WORLD);
+      time = MPI_Wtime() - time;
+      if(iter < 0) {
+        if(myid == ROOT)
+          printf("warmup time: %e\n", time);
+      }
+      else {
+       totalTime += time;
+       totalData += 2 * count * sizeof(Type) / 1.e9;
+       if(myid == ROOT)
+         printf("time: %e\n", time);
+      }
+    }
+    if(myid == ROOT)
+      printf("totalData %.2e totalTime %.2e B/W: %.2e GB/s time: %.2e s/GB --- CommBench::Allgather(3|6,3)\n", totalData, totalTime, totalData / totalTime, totalTime / totalData);
+  
+  }
+
+  {
     CommBench::Allgather<Type> test(sendbuf_d, count, recvbuf_d, MPI_COMM_WORLD, CommBench::MPI);
 
     double totalTime = 0;
@@ -45,7 +83,7 @@
       }
       else {
        totalTime += time;
-       totalData += count * numproc * sizeof(Type) / 1.e9;
+       totalData += 2 * count * sizeof(Type) / 1.e9;
        if(myid == ROOT)
          printf("time: %e\n", time);
       }
@@ -72,7 +110,7 @@
       }
       else {
        totalTime += time;
-       totalData += count * numproc * sizeof(Type) / 1.e9;
+       totalData += 2 * count * sizeof(Type) / 1.e9;
        if(myid == ROOT)
          printf("time: %e\n", time);
       }
@@ -96,7 +134,7 @@
       }
       else {
        totalTime += time;
-       totalData += count * numproc * sizeof(Type) / 1.e9;
+       totalData += 2 * count * sizeof(Type) / 1.e9;
        if(myid == ROOT)
          printf("time: %e\n", time);
       }
@@ -128,13 +166,13 @@
       }
       else {
        totalTime += time;
-       totalData += count * numproc * sizeof(Type) / 1.e9;
+       totalData += 2 * count * sizeof(Type) / 1.e9;
        if(myid == ROOT)
          printf("time: %e\n", time);
       }
     }
     if(myid == ROOT)
-      printf("totalData %.2e totalTime %.2e --- ncclAllGather\n", totalData, totalTime);
+      printf("totalData %.2e totalTime %.2e B/W: %.2e GB/s time: %.2e s/GB --- ncclAllGather\n", totalData, totalTime, totalData / totalTime, totalTime / totalData);
   }
 #endif
 
